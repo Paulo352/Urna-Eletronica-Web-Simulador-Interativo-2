@@ -30,286 +30,48 @@ body {
     padding: 20px;
 }
 
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--accent);
-}
+/* ... (mantenha todos os outros estilos anteriores) ... */
 
-h1 {
-    color: var(--primary);
+.photo-options {
     display: flex;
-    align-items: center;
     gap: 10px;
+    margin: 10px 0;
 }
 
-#clock {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--secondary);
-}
-
-.urna {
-    background-color: var(--primary);
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    margin-bottom: 30px;
-}
-
-.display {
-    background-color: var(--panel);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.screen {
-    min-height: 120px;
-}
-
-#vote-input {
-    width: 100%;
-    padding: 15px;
-    font-size: 2.5rem;
-    text-align: center;
-    border: 2px solid #ddd;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    font-weight: bold;
-}
-
-#candidate-info {
+.photo-option-btn {
+    flex: 1;
     padding: 10px;
-    border: 1px solid #eee;
+    border: none;
     border-radius: 5px;
-    min-height: 60px;
-    text-align: center;
-}
-
-.candidate-display {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.candidate-name {
-    font-size: 1.3rem;
-    font-weight: bold;
-}
-
-.candidate-party {
-    font-size: 1rem;
-    color: #666;
-}
-
-#candidate-info img {
-    max-width: 100px;
-    max-height: 100px;
-    border-radius: 50%;
-    border: 3px solid var(--accent);
-    margin: 0 auto 10px;
-    display: block;
-}
-
-.brand {
-    position: absolute;
-    bottom: 10px;
-    right: 20px;
-    font-size: 0.8rem;
-    color: #999;
-    font-style: italic;
-}
-
-.keyboard {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-}
-
-.key {
-    padding: 15px;
-    font-size: 1.2rem;
-    border: none;
-    border-radius: 10px;
-    background-color: var(--secondary);
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.key:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.btn-correct {
-    background-color: var(--correct);
-}
-
-.btn-confirm {
-    background-color: var(--confirm);
-}
-
-.btn-null {
-    background-color: var(--null);
-}
-
-.btn-blank {
-    background-color: var(--blank);
-}
-
-.admin-panel {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.admin-panel button {
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
     background-color: var(--accent);
     color: white;
-    font-size: 0.9rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    transition: all 0.3s;
+    gap: 5px;
 }
 
-.admin-panel button:hover {
-    background-color: #2980b9;
-    transform: translateY(-2px);
+.photo-option-btn i {
+    font-size: 1rem;
 }
 
-.modal {
+#camera-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border: 2px dashed var(--accent);
+    border-radius: 5px;
+    margin: 10px 0;
     display: none;
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    overflow: auto;
 }
 
-.modal-content {
-    background-color: white;
-    margin: 10% auto;
-    padding: 25px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
-    position: relative;
+#camera-controls {
+    display: none;
+    gap: 10px;
+    margin-top: 10px;
 }
 
-.close {
-    position: absolute;
-    top: 15px;
-    right: 25px;
-    font-size: 1.8rem;
-    color: #aaa;
-    cursor: pointer;
-}
-
-.close:hover {
-    color: #333;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-.btn {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-.btn-primary {
-    background-color: var(--accent);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #2980b9;
-}
-
-.btn-danger {
-    background-color: var(--correct);
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c0392b;
-}
-
-#register-preview {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 3px solid var(--accent);
-    margin: 10px auto;
-    display: block;
-    object-fit: cover;
-    background-color: #f0f0f0;
-    text-align: center;
-    line-height: 100px;
-    color: #999;
-}
-
-#register-preview i {
-    font-size: 2rem;
-}
-
-@media (max-width: 768px) {
-    .keyboard {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .admin-panel {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .modal-content {
-        margin: 20% auto;
-    }
-}
-
-@media (max-width: 480px) {
-    .admin-panel {
-        grid-template-columns: 1fr;
-    }
-    
-    header {
-        flex-direction: column;
-        gap: 10px;
-    }
+#camera-controls button {
+    flex: 1;
 }
