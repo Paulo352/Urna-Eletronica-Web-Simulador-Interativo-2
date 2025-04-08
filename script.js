@@ -1,15 +1,28 @@
-// Inicialização dos dados
-if (!localStorage.getItem('candidates')) {
-    localStorage.setItem('candidates', JSON.stringify([
-        { number: '13', name: 'Lula', party: 'PT' },
-        { number: '22', name: 'Bolsonaro', party: 'PL' },
-        { number: '12', name: 'Ciro Gomes', party: 'PDT' }
-    ]));
-    localStorage.setItem('votes', JSON.stringify([]));
-}
-
+// Configurações iniciais
 let currentNumber = '';
 let currentCandidate = null;
+let adminPassword = "urna2023"; // Senha padrão - altere na primeira utilização
+
+// Inicialização dos dados
+function initializeData() {
+    if (!localStorage.getItem('candidates')) {
+        localStorage.setItem('candidates', JSON.stringify([
+            { number: '13', name: 'Candidato A', party: 'PT' },
+            { number: '22', name: 'Candidato B', party: 'PL' },
+            { number: '12', name: 'Candidato C', party: 'PDT' }
+        ]));
+    }
+    
+    if (!localStorage.getItem('votes')) {
+        localStorage.setItem('votes', JSON.stringify([]));
+    }
+    
+    if (!localStorage.getItem('adminPassword')) {
+        localStorage.setItem('adminPassword', adminPassword);
+    } else {
+        adminPassword = localStorage.getItem('adminPassword');
+    }
+}
 
 // Atualiza o relógio
 function updateClock() {
@@ -19,26 +32,7 @@ function updateClock() {
     setTimeout(updateClock, 1000);
 }
 
-// Adiciona suporte ao teclado físico
-document.addEventListener('keydown', function(event) {
-    // Verifica se a tecla pressionada é um número (0-9)
-    if (event.key >= '0' && event.key <= '9') {
-        addNumber(event.key);
-        event.preventDefault(); // Evita comportamento padrão
-    }
-    // Verifica se a tecla é Enter (para confirmar)
-    else if (event.key === 'Enter') {
-        confirmVote();
-        event.preventDefault();
-    }
-    // Verifica se a tecla é Backspace ou Delete (para corrigir)
-    else if (event.key === 'Backspace' || event.key === 'Delete') {
-        correct();
-        event.preventDefault();
-    }
-});
-
-// Adiciona número ao display
+// Funções da urna
 function addNumber(num) {
     if (currentNumber.length < 2) {
         currentNumber += num;
@@ -47,7 +41,6 @@ function addNumber(num) {
     }
 }
 
-// Corrige o número digitado
 function correct() {
     currentNumber = '';
     currentCandidate = null;
@@ -55,7 +48,6 @@ function correct() {
     document.getElementById('candidate-info').innerHTML = '';
 }
 
-// Confirma o voto
 function confirmVote() {
     if (currentNumber.length !== 2) {
         alert('Digite 2 números para votar!');
@@ -75,12 +67,10 @@ function confirmVote() {
     correct();
 }
 
-// Atualiza o display
 function updateDisplay() {
     document.getElementById('vote-input').value = currentNumber;
 }
 
-// Verifica o candidato digitado
 function checkCandidate() {
     if (currentNumber.length === 2) {
         const candidates = JSON.parse(localStorage.getItem('candidates'));
@@ -100,21 +90,69 @@ function checkCandidate() {
     }
 }
 
-// Cadastra novo candidato
+// Funções administrativas
+function showAdminLogin() {
+    const modalContent = `
+        <h2><i class="fas fa-lock"></i> Acesso Administrativo</h2>
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" placeholder="Digite a senha">
+        </div>
+        <button onclick="verifyAdminPassword()" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Acessar
+        </button>
+    `;
+    
+    showModal(modalContent);
+}
+
+function verifyAdminPassword() {
+    const password = document.getElementById('password').value;
+    if (password === adminPassword) {
+        showResults();
+    } else {
+        alert('Senha incorreta!');
+    }
+}
+
+function showCandidateForm() {
+    const modalContent = `
+        <h2><i class="fas fa-user-plus"></i> Cadastrar Candidato</h2>
+        <div class="form-group">
+            <label for="candidate-number">Número (2 dígitos):</label>
+            <input type="text" id="candidate-number" maxlength="2" placeholder="Ex: 99">
+        </div>
+        <div class="form-group">
+            <label for="candidate-name">Nome:</label>
+            <input type="text" id="candidate-name" placeholder="Nome do candidato">
+        </div>
+        <div class="form-group">
+            <label for="candidate-party">Partido:</label>
+            <input type="text" id="candidate-party" placeholder="Sigla do partido">
+        </div>
+        <button onclick="registerCandidate()" class="btn btn-primary">
+            <i class="fas fa-save"></i> Salvar
+        </button>
+    `;
+    
+    showModal(modalContent);
+}
+
 function registerCandidate() {
-    const number = prompt('Digite o número do candidato (2 dígitos):');
+    const number = document.getElementById('candidate-number').value;
+    const name = document.getElementById('candidate-name').value;
+    const party = document.getElementById('candidate-party').value;
+
     if (!number || number.length !== 2 || isNaN(number)) {
         alert('Número inválido! Deve conter 2 dígitos.');
         return;
     }
 
-    const name = prompt('Digite o nome do candidato:');
     if (!name) {
         alert('Nome inválido!');
         return;
     }
 
-    const party = prompt('Digite o partido do candidato:');
     if (!party) {
         alert('Partido inválido!');
         return;
@@ -122,7 +160,6 @@ function registerCandidate() {
 
     const candidates = JSON.parse(localStorage.getItem('candidates'));
     
-    // Verifica se o número já existe
     if (candidates.some(c => c.number === number)) {
         alert('Já existe um candidato com este número!');
         return;
@@ -131,9 +168,9 @@ function registerCandidate() {
     candidates.push({ number, name, party });
     localStorage.setItem('candidates', JSON.stringify(candidates));
     alert('Candidato cadastrado com sucesso!');
+    closeModal();
 }
 
-// Mostra os resultados
 function showResults() {
     const votes = JSON.parse(localStorage.getItem('votes'));
     const candidates = JSON.parse(localStorage.getItem('candidates'));
@@ -143,14 +180,15 @@ function showResults() {
         results[vote] = (results[vote] || 0) + 1;
     });
     
-    // Ordena por mais votados
     const sortedCandidates = candidates.sort((a, b) => {
         const votesA = results[a.number] || 0;
         const votesB = results[b.number] || 0;
         return votesB - votesA;
     });
     
-    let resultsHTML = '<div class="results-list">';
+    let resultsHTML = '<h2><i class="fas fa-poll"></i> Resultados da Votação</h2>';
+    resultsHTML += '<div class="results-list">';
+    
     sortedCandidates.forEach(candidate => {
         const voteCount = results[candidate.number] || 0;
         const percentage = votes.length > 0 ? (voteCount / votes.length * 100).toFixed(1) : 0;
@@ -168,13 +206,14 @@ function showResults() {
         <div class="total-votes" style="margin-top: 20px; font-weight: bold;">
             Total de votos: ${votes.length}
         </div>
+        <button onclick="generatePDF()" class="btn btn-primary">
+            <i class="fas fa-file-pdf"></i> Gerar PDF
+        </button>
     `;
     
-    document.getElementById('results-content').innerHTML = resultsHTML;
-    document.getElementById('results-modal').style.display = 'block';
+    showModal(resultsHTML);
 }
 
-// Gera relatório em PDF
 function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -208,7 +247,6 @@ function generatePDF() {
     doc.setFont(undefined, 'normal');
     let y = 65;
     
-    // Ordena por mais votados
     const sortedCandidates = candidates.sort((a, b) => {
         const votesA = votes.filter(v => v === a.number).length;
         const votesB = votes.filter(v => v === b.number).length;
@@ -237,25 +275,111 @@ function generatePDF() {
     doc.save(`relatorio_urna_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
-// Zera a urna
-function resetUrn() {
-    if (confirm('Tem certeza que deseja ZERAR TODOS os dados da urna?\nEsta ação não pode ser desfeita!')) {
-        localStorage.removeItem('votes');
-        localStorage.removeItem('candidates');
-        localStorage.setItem('candidates', JSON.stringify([]));
-        localStorage.setItem('votes', JSON.stringify([]));
-        alert('Urna zerada com sucesso!');
-        correct();
-    }
+function showPasswordForm() {
+    const modalContent = `
+        <h2><i class="fas fa-key"></i> Alterar Senha</h2>
+        <div class="form-group">
+            <label for="current-password">Senha atual:</label>
+            <input type="password" id="current-password" placeholder="Digite a senha atual">
+        </div>
+        <div class="form-group">
+            <label for="new-password">Nova senha:</label>
+            <input type="password" id="new-password" placeholder="Digite a nova senha">
+        </div>
+        <div class="form-group">
+            <label for="confirm-password">Confirmar nova senha:</label>
+            <input type="password" id="confirm-password" placeholder="Confirme a nova senha">
+        </div>
+        <button onclick="changeAdminPassword()" class="btn btn-primary">
+            <i class="fas fa-save"></i> Alterar Senha
+        </button>
+    `;
+    
+    showModal(modalContent);
 }
 
-// Fecha o modal
-function closeModal() {
-    document.getElementById('results-modal').style.display = 'none';
+function changeAdminPassword() {
+    const currentPass = document.getElementById('current-password').value;
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+
+    if (currentPass !== adminPassword) {
+        alert('Senha atual incorreta!');
+        return;
+    }
+
+    if (newPass !== confirmPass) {
+        alert('As novas senhas não coincidem!');
+        return;
+    }
+
+    if (newPass.length < 4) {
+        alert('A senha deve ter pelo menos 4 caracteres!');
+        return;
+    }
+
+    adminPassword = newPass;
+    localStorage.setItem('adminPassword', adminPassword);
+    alert('Senha alterada com sucesso!');
+    closeModal();
 }
+
+function showResetConfirmation() {
+    const modalContent = `
+        <h2><i class="fas fa-exclamation-triangle"></i> Zerar Urna</h2>
+        <p>Tem certeza que deseja apagar TODOS os dados da urna?</p>
+        <p style="color: red; font-weight: bold;">Esta ação não pode ser desfeita!</p>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button onclick="resetUrn()" class="btn btn-danger">
+                <i class="fas fa-trash-alt"></i> Sim, zerar
+            </button>
+            <button onclick="closeModal()" class="btn">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    `;
+    
+    showModal(modalContent);
+}
+
+function resetUrn() {
+    localStorage.removeItem('votes');
+    localStorage.removeItem('candidates');
+    initializeData();
+    alert('Urna zerada com sucesso!');
+    closeModal();
+    correct();
+}
+
+// Funções auxiliares
+function showModal(content) {
+    document.getElementById('modal-content').innerHTML = content;
+    document.getElementById('admin-modal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('admin-modal').style.display = 'none';
+}
+
+// Suporte ao teclado físico
+document.addEventListener('keydown', function(event) {
+    if (event.key >= '0' && event.key <= '9') {
+        addNumber(event.key);
+        event.preventDefault();
+    }
+    else if (event.key === 'Enter') {
+        confirmVote();
+        event.preventDefault();
+    }
+    else if (event.key === 'Backspace' || event.key === 'Delete') {
+        correct();
+        event.preventDefault();
+    }
+});
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
+    initializeData();
     updateClock();
     
     // Fecha o modal ao clicar fora

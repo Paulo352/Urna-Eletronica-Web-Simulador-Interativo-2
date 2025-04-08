@@ -44,31 +44,30 @@
             </div>
 
             <div class="admin-panel">
-                <button onclick="registerCandidate()">
-                    <i class="fas fa-user-plus"></i> Cadastrar Candidato
+                <button onclick="showAdminLogin()">
+                    <i class="fas fa-chart-bar"></i> Resultados
                 </button>
-                <button onclick="showResults()">
-                    <i class="fas fa-chart-bar"></i> Ver Resultados
+                <button onclick="showCandidateForm()">
+                    <i class="fas fa-user-plus"></i> Cadastrar
                 </button>
                 <button onclick="generatePDF()">
-                    <i class="fas fa-file-pdf"></i> Gerar Relatório
+                    <i class="fas fa-file-pdf"></i> Relatório
                 </button>
-                <button onclick="resetUrn()">
-                    <i class="fas fa-trash-alt"></i> Zerar Urna
+                <button onclick="showPasswordForm()">
+                    <i class="fas fa-key"></i> Senha
+                </button>
+                <button onclick="showResetConfirmation()">
+                    <i class="fas fa-trash-alt"></i> Zerar
                 </button>
             </div>
         </main>
     </div>
 
-    <!-- Modal de Resultados -->
-    <div id="results-modal" class="modal">
-        <div class="modal-content large">
+    <!-- Modal de Administração -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <h2><i class="fas fa-poll"></i> Resultados da Votação</h2>
-            <div id="results-content"></div>
-            <button onclick="generatePDF()" class="btn-confirm">
-                <i class="fas fa-file-pdf"></i> Gerar PDF
-            </button>
+            <div id="modal-content"></div>
         </div>
     </div>
 

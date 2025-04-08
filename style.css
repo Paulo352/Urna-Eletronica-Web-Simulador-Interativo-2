@@ -145,29 +145,33 @@ h1 {
 
 .admin-panel {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
     margin-top: 20px;
 }
 
 .admin-panel button {
-    padding: 15px;
+    padding: 12px;
     border: none;
     border-radius: 8px;
     background-color: var(--accent);
     color: white;
-    font-size: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s;
 }
 
 .admin-panel button:hover {
     background-color: #2980b9;
     transform: translateY(-2px);
+}
+
+.admin-panel button i {
+    font-size: 1rem;
 }
 
 .modal {
@@ -184,17 +188,13 @@ h1 {
 
 .modal-content {
     background-color: white;
-    margin: 5% auto;
+    margin: 10% auto;
     padding: 25px;
     border-radius: 10px;
     width: 90%;
-    max-width: 600px;
+    max-width: 500px;
     box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
     position: relative;
-}
-
-.modal-content.large {
-    max-width: 800px;
 }
 
 .close {
@@ -210,10 +210,55 @@ h1 {
     color: #333;
 }
 
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-danger {
+    background-color: var(--correct);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
 #results-content {
-    margin: 20px 0;
-    max-height: 500px;
+    max-height: 400px;
     overflow-y: auto;
+    margin: 20px 0;
 }
 
 .result-item {
@@ -227,21 +272,6 @@ h1 {
     background-color: #f9f9f9;
 }
 
-.progress {
-    width: 100%;
-    background-color: #e0e0e0;
-    border-radius: 5px;
-    margin: 15px 0;
-}
-
-.progress-bar {
-    height: 20px;
-    background-color: var(--accent);
-    border-radius: 5px;
-    width: 0%;
-    transition: width 0.5s;
-}
-
 @media (max-width: 768px) {
     .keyboard {
         gap: 10px;
@@ -253,11 +283,21 @@ h1 {
     }
     
     .admin-panel {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .modal-content {
+        margin: 20% auto;
     }
 }
 
-#vote-input:focus {
-    outline: 2px solid #3498db;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+@media (max-width: 480px) {
+    .admin-panel {
+        grid-template-columns: 1fr;
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
