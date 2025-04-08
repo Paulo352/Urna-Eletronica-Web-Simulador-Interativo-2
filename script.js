@@ -13,11 +13,12 @@ let candidatePhotoUrl = null;
 // Inicialização dos dados
 function initializeData() {
     if (!localStorage.getItem('candidates')) {
-        localStorage.setItem('candidates', JSON.stringify([
-            { number: '13', name: 'Candidato A', party: 'PT' },
-            { number: '22', name: 'Candidato B', party: 'PL' },
-            { number: '12', name: 'Candidato C', party: 'PDT' }
-        ]));
+        const defaultCandidates = [
+            { number: '13', name: 'Lula', party: 'PT', photo: null },
+            { number: '22', name: 'Bolsonaro', party: 'PL', photo: null },
+            { number: '12', name: 'Ciro', party: 'PDT', photo: null }
+        ];
+        localStorage.setItem('candidates', JSON.stringify(defaultCandidates));
     }
     
     if (!localStorage.getItem('votes')) {
@@ -53,6 +54,20 @@ function correct() {
     currentCandidate = null;
     updateDisplay();
     document.getElementById('candidate-info').innerHTML = '';
+}
+
+function backspace() {
+    if (currentNumber.length > 0) {
+        currentNumber = currentNumber.slice(0, -1);
+        updateDisplay();
+        
+        if (currentNumber.length === 0) {
+            document.getElementById('candidate-info').innerHTML = '';
+            currentCandidate = null;
+        } else {
+            checkCandidate();
+        }
+    }
 }
 
 function voteNull() {
@@ -164,7 +179,7 @@ function verifyAdminPassword() {
         }
     } else {
         alert('Senha incorreta!');
-        document.getElementById('password').value = ''; // Limpa o campo de senha
+        document.getElementById('password').value = '';
     }
 }
 
@@ -220,7 +235,7 @@ document.getElementById('file-input').addEventListener('change', function(e) {
         reader.onload = function(event) {
             candidatePhotoUrl = event.target.result;
             document.getElementById('register-preview').innerHTML = 
-                `<img src="${candidatePhotoUrl}" alt="Pré-visualização">`;
+                `<img src="${candidatePhotoUrl}" alt="Pré-visualização" style="max-width:100%; height:auto;">`;
         };
         reader.readAsDataURL(e.target.files[0]);
     }
@@ -246,17 +261,19 @@ function registerCandidate() {
         return;
     }
 
-    const candidates = JSON.parse(localStorage.getItem('candidates') || '[]');
+    const candidates = JSON.parse(localStorage.getItem('candidates')) || '[]';
     
     if (candidates.some(c => c.number === number)) {
         alert('Já existe um candidato com este número!');
         return;
     }
 
-    const newCandidate = { number, name: name.trim(), party: party.trim().toUpperCase() };
-    if (candidatePhotoUrl) {
-        newCandidate.photo = candidatePhotoUrl;
-    }
+    const newCandidate = { 
+        number, 
+        name: name.trim(), 
+        party: party.trim().toUpperCase(),
+        photo: candidatePhotoUrl 
+    };
 
     candidates.push(newCandidate);
     localStorage.setItem('candidates', JSON.stringify(candidates));
@@ -428,27 +445,57 @@ function closeModal() {
     document.getElementById('modal-content').innerHTML = '';
     currentAction = null;
     candidatePhotoUrl = null;
+    
+    // Limpa todos os inputs do modal
+    const inputs = document.querySelectorAll('#modal-content input');
+    inputs.forEach(input => {
+        input.value = '';
+    });
+    
+    // Reseta a pré-visualização de foto
+    const preview = document.getElementById('register-preview');
+    if (preview) {
+        preview.innerHTML = '<i class="fas fa-user"></i>';
+    }
+    
+    // Reseta o input de arquivo
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        fileInput.value = '';
+    }
 }
 
 // Suporte ao teclado físico
 document.addEventListener('keydown', function(event) {
-    // Teclas numéricas
-    if (event.key >= '0' && event.key <= '9') {
-        addNumber(event.key);
+    const modalOpen = document.getElementById('admin-modal').style.display === 'block';
+    
+    // Se um modal estiver aberto, permite Backspace/Delete normalmente
+    if (modalOpen) {
+        // Permite navegação com Tab nos modais
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+        return;
     }
-    // Tecla Enter
-    else if (event.key === 'Enter') {
-        confirmVote();
-        event.preventDefault();
-    }
-    // Teclas Backspace/Delete
-    else if (event.key === 'Backspace' || event.key === 'Delete') {
-        correct();
-        event.preventDefault();
-    }
-    // Tecla Escape para fechar modais
-    else if (event.key === 'Escape') {
-        closeModal();
+    
+    // Comportamento na tela principal
+    switch(event.key) {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            addNumber(event.key);
+            break;
+        case 'Enter':
+            confirmVote();
+            event.preventDefault();
+            break;
+        case 'Backspace':
+        case 'Delete':
+            backspace();
+            event.preventDefault();
+            break;
+        case 'Escape':
+            closeModal();
+            break;
     }
 });
 
