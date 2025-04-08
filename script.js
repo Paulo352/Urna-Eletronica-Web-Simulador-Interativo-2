@@ -1,8 +1,14 @@
-// Configurações iniciais
+// Constantes do sistema
+const NULL_VOTE = "null";
+const BLANK_VOTE = "blank";
+const DEFAULT_PASSWORD = "urna2023";
+
+// Variáveis globais
 let currentNumber = '';
 let currentCandidate = null;
-let adminPassword = "urna2023"; // Senha padrão - altere na primeira utilização
+let adminPassword = DEFAULT_PASSWORD;
 let currentAction = null;
+let candidatePhotoUrl = null;
 
 // Inicialização dos dados
 function initializeData() {
@@ -19,7 +25,7 @@ function initializeData() {
     }
     
     if (!localStorage.getItem('adminPassword')) {
-        localStorage.setItem('adminPassword', adminPassword);
+        localStorage.setItem('adminPassword', DEFAULT_PASSWORD);
     } else {
         adminPassword = localStorage.getItem('adminPassword');
     }
@@ -49,23 +55,47 @@ function correct() {
     document.getElementById('candidate-info').innerHTML = '';
 }
 
+function voteNull() {
+    if (confirm("Deseja votar NULO?")) {
+        registerVote(NULL_VOTE);
+        alert("Voto NULO confirmado!");
+        correct();
+    }
+}
+
+function voteBlank() {
+    if (confirm("Deseja votar em BRANCO?")) {
+        registerVote(BLANK_VOTE);
+        alert("Voto em BRANCO confirmado!");
+        correct();
+    }
+}
+
 function confirmVote() {
+    if (currentNumber.length === 0) {
+        voteBlank();
+        return;
+    }
+
     if (currentNumber.length !== 2) {
         alert('Digite 2 números para votar!');
         return;
     }
 
     if (!currentCandidate) {
-        alert('Candidato não encontrado!');
+        voteNull();
         return;
     }
 
-    const votes = JSON.parse(localStorage.getItem('votes'));
-    votes.push(currentNumber);
-    localStorage.setItem('votes', JSON.stringify(votes));
-
+    registerVote(currentNumber);
     alert(`Voto confirmado para ${currentCandidate.name} (${currentCandidate.party})!`);
     correct();
+}
+
+function registerVote(voteType) {
+    const votes = JSON.parse(localStorage.getItem('votes'));
+    votes.push(voteType);
+    localStorage.setItem('votes', JSON.stringify(votes));
 }
 
 function updateDisplay() {
@@ -91,7 +121,7 @@ function checkCandidate() {
                 </div>
             `;
         } else {
-            infoDiv.innerHTML = '<div style="color:red;">Candidato não encontrado</div>';
+            infoDiv.innerHTML = '<div style="color:red;">Número não cadastrado (voto será NULO)</div>';
         }
     }
 }
@@ -123,6 +153,12 @@ function verifyAdminPassword() {
             case 'register':
                 showCandidateForm();
                 break;
+            case 'password':
+                showPasswordForm();
+                break;
+            case 'reset':
+                showResetConfirmation();
+                break;
             default:
                 closeModal();
         }
@@ -147,17 +183,13 @@ function showCandidateForm() {
             <input type="text" id="candidate-party" placeholder="Sigla do partido">
         </div>
         <div class="form-group">
-            <label>Foto do Candidato:</label>
+            <label>Foto do Candidato (opcional):</label>
             <div id="register-preview">
                 <i class="fas fa-user"></i>
             </div>
             <button onclick="promptForPhoto()" class="btn" style="width: 100%;">
                 <i class="fas fa-camera"></i> Adicionar Foto
             </button>
-        </div>
-        <div class="form-group">
-            <label for="register-password">Senha de Administrador:</label>
-            <input type="password" id="register-password" placeholder="Confirme sua senha">
         </div>
         <button onclick="registerCandidate()" class="btn btn-primary">
             <i class="fas fa-save"></i> Salvar Candidato
@@ -166,8 +198,6 @@ function showCandidateForm() {
     
     showModal(modalContent);
 }
-
-let candidatePhotoUrl = null;
 
 function promptForPhoto() {
     const url = prompt('Cole a URL da foto do candidato (deve terminar com .jpg, .jpeg ou .png):');
@@ -183,12 +213,6 @@ function promptForPhoto() {
 }
 
 function registerCandidate() {
-    const password = document.getElementById('register-password').value;
-    if (password !== adminPassword) {
-        alert('Senha administrativa incorreta!');
-        return;
-    }
-
     const number = document.getElementById('candidate-number').value;
     const name = document.getElementById('candidate-name').value;
     const party = document.getElementById('candidate-party').value;
@@ -224,74 +248,6 @@ function registerCandidate() {
     localStorage.setItem('candidates', JSON.stringify(candidates));
     alert('Candidato cadastrado com sucesso!');
     candidatePhotoUrl = null;
-    closeModal();
-}
-
-function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const votes = JSON.parse(localStorage.getItem('votes'));
-    const candidates = JSON.parse(localStorage.getItem('candidates'));
-    const now = new Date();
-    
-    // Título
-    doc.setFontSize(18);
-    doc.text("Relatório de Votação - Urna Eletrônica", 105, 20, { align: 'center' });
-    
-    // Informações de segurança
-    doc.setFontSize(10);
-    doc.text(`Senha administrativa: ${adminPassword}`, 14, 30);
-    doc.text(`Gerado em: ${now.toLocaleDateString()} às ${now.toLocaleTimeString()}`, 14, 35);
-    
-    // Linha divisória
-    doc.setDrawColor(200, 200, 200);
-    doc.line(14, 40, 196, 40);
-    
-    // Cabeçalho da tabela
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text("Nº", 14, 50);
-    doc.text("Candidato", 30, 50);
-    doc.text("Partido", 100, 50);
-    doc.text("Votos", 160, 50);
-    doc.text("%", 180, 50);
-    
-    // Dados dos candidatos
-    doc.setFont(undefined, 'normal');
-    let y = 60;
-    
-    const sortedCandidates = candidates.sort((a, b) => {
-        const votesA = votes.filter(v => v === a.number).length;
-        const votesB = votes.filter(v => v === b.number).length;
-        return votesB - votesA;
-    });
-    
-    sortedCandidates.forEach(candidate => {
-        const candidateVotes = votes.filter(v => v === candidate.number).length;
-        const percentage = votes.length > 0 ? (candidateVotes / votes.length * 100).toFixed(1) : 0;
-        
-        doc.text(candidate.number, 14, y);
-        doc.text(candidate.name, 30, y);
-        doc.text(candidate.party, 100, y);
-        doc.text(candidateVotes.toString(), 160, y);
-        doc.text(percentage + "%", 180, y);
-        
-        y += 10;
-    });
-    
-    // Total de votos
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Total de votos: ${votes.length}`, 14, y + 10);
-    
-    // Rodapé de segurança
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text("Documento protegido por senha administrativa", 105, 290, { align: 'center' });
-    
-    // Salva o PDF
-    doc.save(`relatorio_urna_${now.toISOString().slice(0,10)}.pdf`);
     closeModal();
 }
 
@@ -347,14 +303,11 @@ function changeAdminPassword() {
 function showResetConfirmation() {
     const modalContent = `
         <h2><i class="fas fa-exclamation-triangle"></i> Zerar Urna</h2>
-        <div class="form-group">
-            <label for="reset-password">Senha administrativa:</label>
-            <input type="password" id="reset-password" placeholder="Digite a senha">
-        </div>
+        <p>Tem certeza que deseja apagar TODOS os dados da urna?</p>
         <p style="color: red; font-weight: bold;">Esta ação não pode ser desfeita!</p>
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button onclick="resetUrn()" class="btn btn-danger">
-                <i class="fas fa-trash-alt"></i> Confirmar
+                <i class="fas fa-trash-alt"></i> Sim, zerar
             </button>
             <button onclick="closeModal()" class="btn">
                 <i class="fas fa-times"></i> Cancelar
@@ -366,18 +319,95 @@ function showResetConfirmation() {
 }
 
 function resetUrn() {
-    const password = document.getElementById('reset-password').value;
-    if (password !== adminPassword) {
-        alert('Senha administrativa incorreta!');
-        return;
-    }
-
     localStorage.removeItem('votes');
     localStorage.removeItem('candidates');
     initializeData();
     alert('Urna zerada com sucesso!');
     closeModal();
     correct();
+}
+
+function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const votes = JSON.parse(localStorage.getItem('votes'));
+    const candidates = JSON.parse(localStorage.getItem('candidates'));
+    const now = new Date();
+    
+    // Título
+    doc.setFontSize(18);
+    doc.text("Relatório de Votação - Urna Eletrônica", 105, 20, { align: 'center' });
+    
+    // Informações de segurança
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${now.toLocaleDateString()} às ${now.toLocaleTimeString()}`, 14, 30);
+    
+    // Linha divisória
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 35, 196, 35);
+    
+    // Cálculo de votos
+    const validVotes = votes.filter(v => v !== NULL_VOTE && v !== BLANK_VOTE);
+    const nullVotes = votes.filter(v => v === NULL_VOTE).length;
+    const blankVotes = votes.filter(v => v === BLANK_VOTE).length;
+    
+    // Cabeçalho da tabela
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text("Nº", 14, 45);
+    doc.text("Candidato", 30, 45);
+    doc.text("Partido", 100, 45);
+    doc.text("Votos", 160, 45);
+    doc.text("%", 180, 45);
+    
+    // Dados dos candidatos
+    doc.setFont(undefined, 'normal');
+    let y = 55;
+    
+    const sortedCandidates = candidates.sort((a, b) => {
+        const votesA = votes.filter(v => v === a.number).length;
+        const votesB = votes.filter(v => v === b.number).length;
+        return votesB - votesA;
+    });
+    
+    sortedCandidates.forEach(candidate => {
+        const candidateVotes = votes.filter(v => v === candidate.number).length;
+        const percentage = votes.length > 0 ? (candidateVotes / votes.length * 100).toFixed(1) : 0;
+        
+        doc.text(candidate.number, 14, y);
+        doc.text(candidate.name, 30, y);
+        doc.text(candidate.party, 100, y);
+        doc.text(candidateVotes.toString(), 160, y);
+        doc.text(percentage + "%", 180, y);
+        
+        y += 10;
+    });
+    
+    // Votos nulos e brancos
+    y += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text("Votos Nulos:", 14, y);
+    doc.text(nullVotes.toString(), 160, y);
+    doc.text(((nullVotes / votes.length) * 100).toFixed(1) + "%", 180, y);
+    
+    y += 10;
+    doc.text("Votos em Branco:", 14, y);
+    doc.text(blankVotes.toString(), 160, y);
+    doc.text(((blankVotes / votes.length) * 100).toFixed(1) + "%", 180, y);
+    
+    y += 10;
+    doc.text("Votos Válidos:", 14, y);
+    doc.text(validVotes.length.toString(), 160, y);
+    doc.text(((validVotes.length / votes.length) * 100).toFixed(1) + "%", 180, y);
+    
+    // Total de votos
+    y += 10;
+    doc.text(`Total de votos: ${votes.length}`, 14, y);
+    
+    // Salva o PDF
+    doc.save(`relatorio_urna_${now.toISOString().slice(0,10)}.pdf`);
+    closeModal();
 }
 
 // Funções auxiliares

@@ -40,21 +40,23 @@
                     <button class="key" onclick="addNumber('0')">0</button>
                     <button class="key btn-correct" onclick="correct()">CORRIGE</button>
                     <button class="key btn-confirm" onclick="confirmVote()">CONFIRMA</button>
+                    <button class="key btn-null" onclick="voteNull()">NULO</button>
+                    <button class="key btn-blank" onclick="voteBlank()">BRANCO</button>
                 </div>
             </div>
 
             <div class="admin-panel">
                 <button onclick="showAdminLogin('report')">
-                    <i class="fas fa-file-pdf"></i> Relatório PDF
+                    <i class="fas fa-file-pdf"></i> Relatório
                 </button>
                 <button onclick="showAdminLogin('register')">
                     <i class="fas fa-user-plus"></i> Cadastrar
                 </button>
-                <button onclick="showPasswordForm()">
-                    <i class="fas fa-key"></i> Alterar Senha
+                <button onclick="showAdminLogin('password')">
+                    <i class="fas fa-key"></i> Senha
                 </button>
-                <button onclick="showResetConfirmation()">
-                    <i class="fas fa-trash-alt"></i> Zerar Urna
+                <button onclick="showAdminLogin('reset')">
+                    <i class="fas fa-trash-alt"></i> Zerar
                 </button>
             </div>
         </main>
