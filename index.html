@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urna Eletrônica</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-vote-yea"></i> Urna Eletrônica</h1>
+            <div id="clock"></div>
+        </header>
+
+        <main>
+            <div class="urna">
+                <div class="display">
+                    <div class="screen">
+                        <input type="text" id="vote-input" maxlength="2" readonly placeholder="Número">
+                        <div id="candidate-info"></div>
+                    </div>
+                    <div class="brand">
+                        <span>JUSTIÇA ELEITORAL</span>
+                    </div>
+                </div>
+
+                <div class="keyboard">
+                    <button class="key" onclick="addNumber('1')">1</button>
+                    <button class="key" onclick="addNumber('2')">2</button>
+                    <button class="key" onclick="addNumber('3')">3</button>
+                    <button class="key" onclick="addNumber('4')">4</button>
+                    <button class="key" onclick="addNumber('5')">5</button>
+                    <button class="key" onclick="addNumber('6')">6</button>
+                    <button class="key" onclick="addNumber('7')">7</button>
+                    <button class="key" onclick="addNumber('8')">8</button>
+                    <button class="key" onclick="addNumber('9')">9</button>
+                    <button class="key" onclick="addNumber('0')">0</button>
+                    <button class="key btn-correct" onclick="correct()">CORRIGE</button>
+                    <button class="key btn-confirm" onclick="confirmVote()">CONFIRMA</button>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <button onclick="registerCandidate()">
+                    <i class="fas fa-user-plus"></i> Cadastrar Candidato
+                </button>
+                <button onclick="showResults()">
+                    <i class="fas fa-chart-bar"></i> Ver Resultados
+                </button>
+                <button onclick="generatePDF()">
+                    <i class="fas fa-file-pdf"></i> Gerar Relatório
+                </button>
+                <button onclick="resetUrn()">
+                    <i class="fas fa-trash-alt"></i> Zerar Urna
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="results-modal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2><i class="fas fa-poll"></i> Resultados da Votação</h2>
+            <div id="results-content"></div>
+            <button onclick="generatePDF()" class="btn-confirm">
+                <i class="fas fa-file-pdf"></i> Gerar PDF
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

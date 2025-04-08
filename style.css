@@ -1,0 +1,258 @@
+:root {
+    --primary: #2c3e50;
+    --secondary: #34495e;
+    --accent: #3498db;
+    --correct: #e74c3c;
+    --confirm: #2ecc71;
+    --text: #ecf0f1;
+    --background: #f5f7fa;
+    --panel: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--primary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--accent);
+}
+
+h1 {
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#clock {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--secondary);
+}
+
+.urna {
+    background-color: var(--primary);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+}
+
+.display {
+    background-color: var(--panel);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.screen {
+    min-height: 120px;
+}
+
+#vote-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 2.5rem;
+    text-align: center;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+#candidate-info {
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    min-height: 60px;
+}
+
+.candidate-display {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.candidate-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.candidate-party {
+    font-size: 1rem;
+    color: #666;
+}
+
+.brand {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    font-size: 0.8rem;
+    color: #999;
+    font-style: italic;
+}
+
+.keyboard {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.key {
+    padding: 20px;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--secondary);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.key:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-correct {
+    background-color: var(--correct);
+}
+
+.btn-confirm {
+    background-color: var(--confirm);
+}
+
+.admin-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.admin-panel button {
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--accent);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s;
+}
+
+.admin-panel button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.modal-content.large {
+    max-width: 800px;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 1.8rem;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #333;
+}
+
+#results-content {
+    margin: 20px 0;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.result-item:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+.progress {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: var(--accent);
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.5s;
+}
+
+@media (max-width: 768px) {
+    .keyboard {
+        gap: 10px;
+    }
+    
+    .key {
+        padding: 15px;
+        font-size: 1.2rem;
+    }
+    
+    .admin-panel {
+        grid-template-columns: 1fr;
+    }
+}
