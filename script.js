@@ -2,6 +2,7 @@
 let currentNumber = '';
 let currentCandidate = null;
 let adminPassword = "urna2023"; // Senha padrão - altere na primeira utilização
+let currentAction = null;
 
 // Inicialização dos dados
 function initializeData() {
@@ -78,25 +79,31 @@ function checkCandidate() {
         
         const infoDiv = document.getElementById('candidate-info');
         if (currentCandidate) {
+            let photoHTML = currentCandidate.photo 
+                ? `<img src="${currentCandidate.photo}" alt="${currentCandidate.name}">`
+                : '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
+            
             infoDiv.innerHTML = `
+                <div class="candidate-photo">${photoHTML}</div>
                 <div class="candidate-display">
                     <span class="candidate-name">${currentCandidate.name}</span>
                     <span class="candidate-party">${currentCandidate.party}</span>
                 </div>
             `;
         } else {
-            infoDiv.innerHTML = '<div style="color:red; text-align:center;">Candidato não encontrado</div>';
+            infoDiv.innerHTML = '<div style="color:red;">Candidato não encontrado</div>';
         }
     }
 }
 
 // Funções administrativas
-function showAdminLogin() {
+function showAdminLogin(action) {
+    currentAction = action;
     const modalContent = `
         <h2><i class="fas fa-lock"></i> Acesso Administrativo</h2>
         <div class="form-group">
             <label for="password">Senha:</label>
-            <input type="password" id="password" placeholder="Digite a senha">
+            <input type="password" id="password" placeholder="Digite a senha" autofocus>
         </div>
         <button onclick="verifyAdminPassword()" class="btn btn-primary">
             <i class="fas fa-sign-in-alt"></i> Acessar
@@ -109,7 +116,16 @@ function showAdminLogin() {
 function verifyAdminPassword() {
     const password = document.getElementById('password').value;
     if (password === adminPassword) {
-        showResults();
+        switch(currentAction) {
+            case 'report':
+                generatePDF();
+                break;
+            case 'register':
+                showCandidateForm();
+                break;
+            default:
+                closeModal();
+        }
     } else {
         alert('Senha incorreta!');
     }
@@ -130,15 +146,49 @@ function showCandidateForm() {
             <label for="candidate-party">Partido:</label>
             <input type="text" id="candidate-party" placeholder="Sigla do partido">
         </div>
+        <div class="form-group">
+            <label>Foto do Candidato:</label>
+            <div id="register-preview">
+                <i class="fas fa-user"></i>
+            </div>
+            <button onclick="promptForPhoto()" class="btn" style="width: 100%;">
+                <i class="fas fa-camera"></i> Adicionar Foto
+            </button>
+        </div>
+        <div class="form-group">
+            <label for="register-password">Senha de Administrador:</label>
+            <input type="password" id="register-password" placeholder="Confirme sua senha">
+        </div>
         <button onclick="registerCandidate()" class="btn btn-primary">
-            <i class="fas fa-save"></i> Salvar
+            <i class="fas fa-save"></i> Salvar Candidato
         </button>
     `;
     
     showModal(modalContent);
 }
 
+let candidatePhotoUrl = null;
+
+function promptForPhoto() {
+    const url = prompt('Cole a URL da foto do candidato (deve terminar com .jpg, .jpeg ou .png):');
+    
+    if (url) {
+        if (url.match(/\.(jpeg|jpg|png)$/) && url.startsWith('http')) {
+            candidatePhotoUrl = url;
+            document.getElementById('register-preview').innerHTML = `<img src="${url}" alt="Pré-visualização">`;
+        } else {
+            alert('URL inválida! Deve ser uma imagem (jpg, jpeg ou png) e começar com http');
+        }
+    }
+}
+
 function registerCandidate() {
+    const password = document.getElementById('register-password').value;
+    if (password !== adminPassword) {
+        alert('Senha administrativa incorreta!');
+        return;
+    }
+
     const number = document.getElementById('candidate-number').value;
     const name = document.getElementById('candidate-name').value;
     const party = document.getElementById('candidate-party').value;
@@ -165,53 +215,16 @@ function registerCandidate() {
         return;
     }
 
-    candidates.push({ number, name, party });
+    const newCandidate = { number, name, party };
+    if (candidatePhotoUrl) {
+        newCandidate.photo = candidatePhotoUrl;
+    }
+
+    candidates.push(newCandidate);
     localStorage.setItem('candidates', JSON.stringify(candidates));
     alert('Candidato cadastrado com sucesso!');
+    candidatePhotoUrl = null;
     closeModal();
-}
-
-function showResults() {
-    const votes = JSON.parse(localStorage.getItem('votes'));
-    const candidates = JSON.parse(localStorage.getItem('candidates'));
-    
-    let results = {};
-    votes.forEach(vote => {
-        results[vote] = (results[vote] || 0) + 1;
-    });
-    
-    const sortedCandidates = candidates.sort((a, b) => {
-        const votesA = results[a.number] || 0;
-        const votesB = results[b.number] || 0;
-        return votesB - votesA;
-    });
-    
-    let resultsHTML = '<h2><i class="fas fa-poll"></i> Resultados da Votação</h2>';
-    resultsHTML += '<div class="results-list">';
-    
-    sortedCandidates.forEach(candidate => {
-        const voteCount = results[candidate.number] || 0;
-        const percentage = votes.length > 0 ? (voteCount / votes.length * 100).toFixed(1) : 0;
-        
-        resultsHTML += `
-            <div class="result-item">
-                <span>${candidate.number} - ${candidate.name} (${candidate.party})</span>
-                <span>${voteCount} votos (${percentage}%)</span>
-            </div>
-        `;
-    });
-    
-    resultsHTML += `
-        </div>
-        <div class="total-votes" style="margin-top: 20px; font-weight: bold;">
-            Total de votos: ${votes.length}
-        </div>
-        <button onclick="generatePDF()" class="btn btn-primary">
-            <i class="fas fa-file-pdf"></i> Gerar PDF
-        </button>
-    `;
-    
-    showModal(resultsHTML);
 }
 
 function generatePDF() {
@@ -220,32 +233,33 @@ function generatePDF() {
     
     const votes = JSON.parse(localStorage.getItem('votes'));
     const candidates = JSON.parse(localStorage.getItem('candidates'));
+    const now = new Date();
     
     // Título
     doc.setFontSize(18);
     doc.text("Relatório de Votação - Urna Eletrônica", 105, 20, { align: 'center' });
     
-    // Data e hora
-    doc.setFontSize(12);
-    doc.text(`Data: ${new Date().toLocaleDateString()}`, 14, 30);
-    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, 14, 38);
+    // Informações de segurança
+    doc.setFontSize(10);
+    doc.text(`Senha administrativa: ${adminPassword}`, 14, 30);
+    doc.text(`Gerado em: ${now.toLocaleDateString()} às ${now.toLocaleTimeString()}`, 14, 35);
     
     // Linha divisória
     doc.setDrawColor(200, 200, 200);
-    doc.line(14, 45, 196, 45);
+    doc.line(14, 40, 196, 40);
     
     // Cabeçalho da tabela
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text("Nº", 14, 55);
-    doc.text("Candidato", 30, 55);
-    doc.text("Partido", 100, 55);
-    doc.text("Votos", 160, 55);
-    doc.text("%", 180, 55);
+    doc.text("Nº", 14, 50);
+    doc.text("Candidato", 30, 50);
+    doc.text("Partido", 100, 50);
+    doc.text("Votos", 160, 50);
+    doc.text("%", 180, 50);
     
     // Dados dos candidatos
     doc.setFont(undefined, 'normal');
-    let y = 65;
+    let y = 60;
     
     const sortedCandidates = candidates.sort((a, b) => {
         const votesA = votes.filter(v => v === a.number).length;
@@ -267,12 +281,18 @@ function generatePDF() {
     });
     
     // Total de votos
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`Total de votos: ${votes.length}`, 14, y + 15);
+    doc.text(`Total de votos: ${votes.length}`, 14, y + 10);
+    
+    // Rodapé de segurança
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text("Documento protegido por senha administrativa", 105, 290, { align: 'center' });
     
     // Salva o PDF
-    doc.save(`relatorio_urna_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`relatorio_urna_${now.toISOString().slice(0,10)}.pdf`);
+    closeModal();
 }
 
 function showPasswordForm() {
@@ -327,11 +347,14 @@ function changeAdminPassword() {
 function showResetConfirmation() {
     const modalContent = `
         <h2><i class="fas fa-exclamation-triangle"></i> Zerar Urna</h2>
-        <p>Tem certeza que deseja apagar TODOS os dados da urna?</p>
+        <div class="form-group">
+            <label for="reset-password">Senha administrativa:</label>
+            <input type="password" id="reset-password" placeholder="Digite a senha">
+        </div>
         <p style="color: red; font-weight: bold;">Esta ação não pode ser desfeita!</p>
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button onclick="resetUrn()" class="btn btn-danger">
-                <i class="fas fa-trash-alt"></i> Sim, zerar
+                <i class="fas fa-trash-alt"></i> Confirmar
             </button>
             <button onclick="closeModal()" class="btn">
                 <i class="fas fa-times"></i> Cancelar
@@ -343,6 +366,12 @@ function showResetConfirmation() {
 }
 
 function resetUrn() {
+    const password = document.getElementById('reset-password').value;
+    if (password !== adminPassword) {
+        alert('Senha administrativa incorreta!');
+        return;
+    }
+
     localStorage.removeItem('votes');
     localStorage.removeItem('candidates');
     initializeData();
@@ -359,6 +388,8 @@ function showModal(content) {
 
 function closeModal() {
     document.getElementById('admin-modal').style.display = 'none';
+    currentAction = null;
+    candidatePhotoUrl = null;
 }
 
 // Suporte ao teclado físico
