@@ -19,6 +19,25 @@ function updateClock() {
     setTimeout(updateClock, 1000);
 }
 
+// Adiciona suporte ao teclado físico
+document.addEventListener('keydown', function(event) {
+    // Verifica se a tecla pressionada é um número (0-9)
+    if (event.key >= '0' && event.key <= '9') {
+        addNumber(event.key);
+        event.preventDefault(); // Evita comportamento padrão
+    }
+    // Verifica se a tecla é Enter (para confirmar)
+    else if (event.key === 'Enter') {
+        confirmVote();
+        event.preventDefault();
+    }
+    // Verifica se a tecla é Backspace ou Delete (para corrigir)
+    else if (event.key === 'Backspace' || event.key === 'Delete') {
+        correct();
+        event.preventDefault();
+    }
+});
+
 // Adiciona número ao display
 function addNumber(num) {
     if (currentNumber.length < 2) {
