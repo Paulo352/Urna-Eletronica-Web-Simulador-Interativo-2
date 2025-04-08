@@ -256,3 +256,8 @@ h1 {
         grid-template-columns: 1fr;
     }
 }
+
+#vote-input:focus {
+    outline: 2px solid #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
