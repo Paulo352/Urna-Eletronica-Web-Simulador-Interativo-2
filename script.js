@@ -12,13 +12,9 @@ let candidatePhotoUrl = null;
 
 // Inicialização dos dados
 function initializeData() {
+    // Não cria candidatos padrão se não existirem
     if (!localStorage.getItem('candidates')) {
-        const defaultCandidates = [
-            { number: '13', name: 'Lula', party: 'PT', photo: null },
-            { number: '22', name: 'Bolsonaro', party: 'PL', photo: null },
-            { number: '12', name: 'Ciro', party: 'PDT', photo: null }
-        ];
-        localStorage.setItem('candidates', JSON.stringify(defaultCandidates));
+        localStorage.setItem('candidates', JSON.stringify([])); // Lista vazia
     }
     
     if (!localStorage.getItem('votes')) {
