@@ -1,7 +1,7 @@
 // Constantes do sistema
 const NULL_VOTE = "null";
 const BLANK_VOTE = "blank";
-const DEFAULT_PASSWORD = "urna2023";
+const DEFAULT_PASSWORD = "admin";
 
 // Variáveis globais
 let currentNumber = '';
