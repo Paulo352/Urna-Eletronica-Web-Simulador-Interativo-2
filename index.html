@@ -6,12 +6,13 @@
     <title>Urna Eletrônica</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-vote-yea"></i> Urna Eletrônica</h1>
+            <h1><i class="fas fa-vote-yea"></i> Urna Eletrônica <span id="current-role"></span></h1>
             <div id="clock"></div>
         </header>
 
@@ -52,11 +53,17 @@
                 <button onclick="showAdminLogin('register')">
                     <i class="fas fa-user-plus"></i> Cadastrar
                 </button>
+                <button onclick="showAdminLogin('roles')">
+                    <i class="fas fa-exchange-alt"></i> Cargos
+                </button>
                 <button onclick="showAdminLogin('password')">
                     <i class="fas fa-key"></i> Senha
                 </button>
                 <button onclick="showAdminLogin('reset')">
                     <i class="fas fa-trash-alt"></i> Zerar
+                </button>
+                <button onclick="toggleAccessibility()">
+                    <i class="fas fa-eye"></i> Acessibilidade
                 </button>
             </div>
         </main>
@@ -67,6 +74,16 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Biometria Simulada -->
+    <div id="biometric-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBiometricModal()">&times;</span>
+            <h2><i class="fas fa-fingerprint"></i> Autenticação Biométrica</h2>
+            <div id="biometric-status">Coloque seu dedo no sensor</div>
+            <div class="biometric-sensor" onclick="simulateBiometric()"></div>
         </div>
     </div>
 

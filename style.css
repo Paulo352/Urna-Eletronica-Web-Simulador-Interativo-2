@@ -337,3 +337,73 @@ h1 {
         flex-direction: column;
     }
 }
+
+/* ... (mantenha todos os estilos anteriores) ... */
+
+/* Novos estilos adicionados */
+#current-role {
+    font-size: 0.8em;
+    color: #7f8c8d;
+}
+
+.role-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.role-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.biometric-sensor {
+    width: 150px;
+    height: 200px;
+    background-color: #2c3e50;
+    margin: 20px auto;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+}
+
+.biometric-sensor:hover {
+    background-color: #34495e;
+}
+
+#biometric-status {
+    text-align: center;
+    margin: 15px 0;
+    font-weight: bold;
+}
+
+/* Estilos para modo acessibilidade */
+.accessibility-mode .key {
+    font-size: 2rem;
+    padding: 20px;
+}
+
+.accessibility-mode .display {
+    background-color: #000;
+    color: #fff;
+}
+
+.accessibility-mode #vote-input {
+    font-size: 3rem;
+    color: #fff;
+    background-color: #000;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .accessibility-mode .key {
+        font-size: 1.5rem;
+        padding: 15px;
+    }
+}
