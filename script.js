@@ -57,11 +57,57 @@ function initializeData() {
 }
 
 // Atualiza o relógio
-function updateClock() {
+// Adicione esta função no seu script.js existente
+function getBrasiliaTime() {
     const now = new Date();
+    const offset = -3; // UTC-3 para Brasília (BRT)
+    return new Date(now.getTime() + (offset * 60 * 60 * 1000));
+}
+
+// Substitua a função updateClock existente por esta:
+function updateClock() {
+    const brasiliaTime = getBrasiliaTime();
     const clock = document.getElementById('clock');
-    clock.textContent = now.toLocaleTimeString();
     
+    // Formatação completa com data e hora
+    const options = {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    
+    try {
+        // Tenta usar Intl para formatação precisa (melhor método)
+        clock.textContent = new Intl.DateTimeFormat('pt-BR', options).format(brasiliaTime) + ' (BRT)';
+    } catch (e) {
+        // Fallback caso Intl não esteja disponível
+        const hours = String(brasiliaTime.getHours()).padStart(2, '0');
+        const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
+        const seconds = String(brasiliaTime.getSeconds()).padStart(2, '0');
+        const day = String(brasiliaTime.getDate()).padStart(2, '0');
+        const month = String(brasiliaTime.getMonth() + 1).padStart(2, '0');
+        const year = brasiliaTime.getFullYear();
+        
+        clock.textContent = `${day}/${month}/${year} ${hours}:${minutes}:${seconds} (BRT)`;
+    }
+    
+    setTimeout(updateClock, 1000);
+}
+
+// Modifique a verificação do tempo de eleição para usar horário de Brasília
+function checkElectionTime() {
+    const now = getBrasiliaTime();
+    if (now >= electionEndTime && electionActive) {
+        electionActive = false;
+        alert('O tempo da eleição terminou! A urna está encerrada.');
+    }
+ }
+   
     // Verifica se o tempo da eleição acabou
     if (now >= electionEndTime && electionActive) {
         electionActive = false;
@@ -69,7 +115,7 @@ function updateClock() {
     }
     
     setTimeout(updateClock, 1000);
-}
+
 
 // Funções da urna
 function addNumber(num) {
