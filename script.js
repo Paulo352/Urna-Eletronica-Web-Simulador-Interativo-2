@@ -2,7 +2,6 @@
 const NULL_VOTE = "null";
 const BLANK_VOTE = "blank";
 const DEFAULT_PASSWORD = "admin";
-const DEFAULT_ROLES = ['Prefeito', 'Vereador'];
 
 // Variáveis globais
 let currentNumber = '';
@@ -10,112 +9,75 @@ let currentCandidate = null;
 let adminPassword = DEFAULT_PASSWORD;
 let currentAction = null;
 let candidatePhotoUrl = null;
-let currentRole = DEFAULT_ROLES[0];
+let currentRole = '';
 let accessibilityMode = false;
 let electionActive = true;
-let electionEndTime = new Date();
-electionEndTime.setHours(electionEndTime.getHours() + 2); // 2 horas de eleição
 
-// Inicialização dos dados
+// Inicialização
 function initializeData() {
-    // Candidatos
     if (!localStorage.getItem('candidates')) {
         localStorage.setItem('candidates', JSON.stringify([]));
     }
     
-    // Votos
     if (!localStorage.getItem('votes')) {
         localStorage.setItem('votes', JSON.stringify([]));
     }
     
-    // Senha admin
     if (!localStorage.getItem('adminPassword')) {
         localStorage.setItem('adminPassword', DEFAULT_PASSWORD);
     } else {
         adminPassword = localStorage.getItem('adminPassword');
     }
     
-    // Cargos
     if (!localStorage.getItem('electionRoles')) {
-        localStorage.setItem('electionRoles', JSON.stringify(DEFAULT_ROLES));
+        localStorage.setItem('electionRoles', JSON.stringify([]));
     }
     
-    // Cargo atual
     if (localStorage.getItem('currentRole')) {
         currentRole = localStorage.getItem('currentRole');
     }
     
-    // Tempo de eleição
-    if (localStorage.getItem('electionEndTime')) {
-        electionEndTime = new Date(localStorage.getItem('electionEndTime'));
-    } else {
-        localStorage.setItem('electionEndTime', electionEndTime.toISOString());
-    }
-    
     updateRoleDisplay();
-    checkElectionTime();
+    updateClock();
+    updateMessages();
 }
 
 // Atualiza o relógio
-// Adicione esta função no seu script.js existente
-function getBrasiliaTime() {
-    const now = new Date();
-    const offset = -3; // UTC-3 para Brasília (BRT)
-    return new Date(now.getTime() + (offset * 60 * 60 * 1000));
-}
-
-// Substitua a função updateClock existente por esta:
 function updateClock() {
-    const brasiliaTime = getBrasiliaTime();
+    const brasiliaTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
     const clock = document.getElementById('clock');
     
-    // Formatação completa com data e hora
-    const options = {
-        timeZone: 'America/Sao_Paulo',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    };
+    const day = String(brasiliaTime.getDate()).padStart(2, '0');
+    const month = String(brasiliaTime.getMonth() + 1).padStart(2, '0');
+    const year = brasiliaTime.getFullYear();
+    const hours = String(brasiliaTime.getHours()).padStart(2, '0');
+    const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
     
-    try {
-        // Tenta usar Intl para formatação precisa (melhor método)
-        clock.textContent = new Intl.DateTimeFormat('pt-BR', options).format(brasiliaTime) + ' (BRT)';
-    } catch (e) {
-        // Fallback caso Intl não esteja disponível
-        const hours = String(brasiliaTime.getHours()).padStart(2, '0');
-        const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
-        const seconds = String(brasiliaTime.getSeconds()).padStart(2, '0');
-        const day = String(brasiliaTime.getDate()).padStart(2, '0');
-        const month = String(brasiliaTime.getMonth() + 1).padStart(2, '0');
-        const year = brasiliaTime.getFullYear();
-        
-        clock.textContent = `${day}/${month}/${year} ${hours}:${minutes}:${seconds} (BRT)`;
-    }
-    
-    setTimeout(updateClock, 1000);
+    clock.textContent = `${day}/${month}/${year} ${hours}:${minutes} (BRT)`;
+    setTimeout(updateClock, 60000); // Atualiza a cada minuto
 }
 
-// Modifique a verificação do tempo de eleição para usar horário de Brasília
-function checkElectionTime() {
-    const now = getBrasiliaTime();
-    if (now >= electionEndTime && electionActive) {
-        electionActive = false;
-        alert('O tempo da eleição terminou! A urna está encerrada.');
-    }
- }
-   
-    // Verifica se o tempo da eleição acabou
-    if (now >= electionEndTime && electionActive) {
-        electionActive = false;
-        alert('O tempo da eleição terminou! A urna está encerrada.');
-    }
+// Atualiza mensagens na tela
+function updateMessages() {
+    const line1 = document.getElementById('message-line1');
+    const line2 = document.getElementById('message-line2');
     
-    setTimeout(updateClock, 1000);
-
+    if (currentNumber.length === 0) {
+        line1.textContent = "Aperte a tecla:";
+        line2.textContent = "BRANCO para VOTAR EM BRANCO";
+    } else if (currentNumber.length === 1) {
+        line1.textContent = "Aperte a tecla:";
+        line2.textContent = "CORRIGE para REINICIAR";
+    } else if (currentNumber.length === 2) {
+        if (currentCandidate) {
+            line1.textContent = "Aperte a tecla:";
+            line2.textContent = "VERDE para CONFIRMAR este voto";
+        } else {
+            line1.textContent = "NÚMERO ERRADO";
+            line2.textContent = "Aperte CORRIGE para REINICIAR";
+        }
+    }
+}
 
 // Funções da urna
 function addNumber(num) {
@@ -125,7 +87,6 @@ function addNumber(num) {
         updateDisplay();
         checkCandidate();
         
-        // Feedback de acessibilidade
         if (accessibilityMode) {
             speak(`Digitado ${num}`);
         }
@@ -136,54 +97,9 @@ function correct() {
     currentNumber = '';
     currentCandidate = null;
     updateDisplay();
-    document.getElementById('candidate-info').innerHTML = '';
     
     if (accessibilityMode) {
         speak('Voto corrigido');
-    }
-}
-
-function backspace() {
-    if (currentNumber.length > 0) {
-        currentNumber = currentNumber.slice(0, -1);
-        updateDisplay();
-        
-        if (currentNumber.length === 0) {
-            document.getElementById('candidate-info').innerHTML = '';
-            currentCandidate = null;
-        } else {
-            checkCandidate();
-        }
-        
-        if (accessibilityMode) {
-            speak('Número apagado');
-        }
-    }
-}
-
-function voteNull() {
-    if (!electionActive) return;
-    if (confirm("Deseja votar NULO?")) {
-        registerVote(NULL_VOTE);
-        alert("Voto NULO confirmado!");
-        correct();
-        
-        if (accessibilityMode) {
-            speak('Voto nulo confirmado');
-        }
-    }
-}
-
-function voteBlank() {
-    if (!electionActive) return;
-    if (confirm("Deseja votar em BRANCO?")) {
-        registerVote(BLANK_VOTE);
-        alert("Voto em BRANCO confirmado!");
-        correct();
-        
-        if (accessibilityMode) {
-            speak('Voto em branco confirmado');
-        }
     }
 }
 
@@ -214,6 +130,32 @@ function confirmVote() {
     }
 }
 
+function voteNull() {
+    if (!electionActive) return;
+    if (confirm("Deseja votar NULO?")) {
+        registerVote(NULL_VOTE);
+        alert("Voto NULO confirmado!");
+        correct();
+        
+        if (accessibilityMode) {
+            speak('Voto nulo confirmado');
+        }
+    }
+}
+
+function voteBlank() {
+    if (!electionActive) return;
+    if (confirm("Deseja votar em BRANCO?")) {
+        registerVote(BLANK_VOTE);
+        alert("Voto em BRANCO confirmado!");
+        correct();
+        
+        if (accessibilityMode) {
+            speak('Voto em branco confirmado');
+        }
+    }
+}
+
 function registerVote(voteType) {
     const votes = JSON.parse(localStorage.getItem('votes'));
     const voteData = {
@@ -227,7 +169,6 @@ function registerVote(voteType) {
 }
 
 function generateVoteHash(voteType) {
-    // Cria um hash simples para auditoria
     const data = `${voteType}-${currentRole}-${new Date().getTime()}-${Math.random()}`;
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
@@ -240,6 +181,7 @@ function generateVoteHash(voteType) {
 
 function updateDisplay() {
     document.getElementById('vote-input').value = currentNumber;
+    updateMessages();
 }
 
 function checkCandidate() {
@@ -247,30 +189,37 @@ function checkCandidate() {
         const candidates = JSON.parse(localStorage.getItem('candidates'));
         currentCandidate = candidates.find(c => c.number === currentNumber && c.role === currentRole);
         
-        const infoDiv = document.getElementById('candidate-info');
         if (currentCandidate) {
-            let photoHTML = currentCandidate.photo 
-                ? `<img src="${currentCandidate.photo}" alt="${currentCandidate.name}">`
-                : '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
+            document.getElementById('candidate-name').textContent = currentCandidate.name;
+            document.getElementById('candidate-party').textContent = currentCandidate.party;
+            document.getElementById('vice-name').textContent = currentCandidate.viceName || "Não informado";
             
-            infoDiv.innerHTML = `
-                <div class="candidate-photo">${photoHTML}</div>
-                <div class="candidate-display">
-                    <span class="candidate-name">${currentCandidate.name}</span>
-                    <span class="candidate-party">${currentCandidate.party}</span>
-                </div>
-            `;
-            
-            if (accessibilityMode) {
-                speak(`Candidato ${currentCandidate.name}, ${currentCandidate.party}`);
+            const photoContainer = document.querySelector('.photo-container');
+            if (currentCandidate.photo) {
+                photoContainer.innerHTML = `<img src="${currentCandidate.photo}" alt="${currentCandidate.name}" style="width:100%;height:100%;object-fit:cover;">`;
+            } else {
+                photoContainer.innerHTML = '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
             }
         } else {
-            infoDiv.innerHTML = '<div style="color:red;">Número não cadastrado (voto será NULO)</div>';
-            
-            if (accessibilityMode) {
-                speak('Número não cadastrado, voto será nulo');
-            }
+            document.getElementById('candidate-name').textContent = "";
+            document.getElementById('candidate-party').textContent = "";
+            document.getElementById('vice-name').textContent = "";
+            document.querySelector('.photo-container').innerHTML = '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
         }
+    }
+    updateMessages();
+}
+
+function updateRoleDisplay() {
+    const roleDisplay = document.getElementById('current-role-display');
+    const voteRoleDisplay = document.getElementById('vote-role-display');
+    
+    if (currentRole) {
+        roleDisplay.textContent = `- ${currentRole.toUpperCase()}`;
+        voteRoleDisplay.textContent = currentRole.toUpperCase();
+    } else {
+        roleDisplay.textContent = '';
+        voteRoleDisplay.textContent = '[NÃO SELECIONADO]';
     }
 }
 
@@ -319,8 +268,130 @@ function verifyAdminPassword() {
     }
 }
 
+function showCandidateForm() {
+    const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
+    
+    const modalContent = `
+        <h2><i class="fas fa-user-plus"></i> Cadastrar Candidato</h2>
+        <div class="form-group">
+            <label for="candidate-role">Cargo:</label>
+            <input type="text" id="candidate-role" class="form-control" placeholder="Ex: Prefeito" list="roles-list" required>
+            <datalist id="roles-list">
+                ${roles.map(role => `<option value="${role}">`).join('')}
+            </datalist>
+        </div>
+        <div class="form-group">
+            <label for="candidate-number">Número (2 dígitos):</label>
+            <input type="text" id="candidate-number" maxlength="2" 
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" 
+                   placeholder="Ex: 99" required>
+        </div>
+        <div class="form-group">
+            <label for="candidate-name">Nome do Candidato:</label>
+            <input type="text" id="candidate-name" placeholder="Nome completo" required>
+        </div>
+        <div class="form-group">
+            <label for="candidate-party">Partido:</label>
+            <input type="text" id="candidate-party" placeholder="Sigla do partido" required>
+        </div>
+        <div class="form-group">
+            <label for="vice-name">Nome do Vice:</label>
+            <input type="text" id="vice-name" placeholder="Nome completo do vice">
+        </div>
+        <div class="form-group">
+            <label for="vice-party">Partido do Vice:</label>
+            <input type="text" id="vice-party" placeholder="Deixe em branco para usar o mesmo partido">
+        </div>
+        <div class="form-group">
+            <label>Foto do Candidato:</label>
+            <div id="register-preview">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="photo-options">
+                <button onclick="document.getElementById('file-input').click()" class="btn btn-primary">
+                    <i class="fas fa-folder-open"></i> Escolher Foto
+                </button>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="registerCandidate()" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+            <button onclick="closeModal()" class="btn btn-danger">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    `;
+    
+    showModal(modalContent);
+    candidatePhotoUrl = null;
+    
+    document.getElementById('file-input').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                candidatePhotoUrl = event.target.result;
+                document.getElementById('register-preview').innerHTML = `<img src="${candidatePhotoUrl}" alt="Foto do candidato">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+}
+
+function registerCandidate() {
+    const role = document.getElementById('candidate-role').value.trim();
+    const number = document.getElementById('candidate-number').value;
+    const name = document.getElementById('candidate-name').value.trim();
+    const party = document.getElementById('candidate-party').value.trim().toUpperCase();
+    const viceName = document.getElementById('vice-name').value.trim();
+    const viceParty = document.getElementById('vice-party').value.trim().toUpperCase() || party;
+
+    if (!number || number.length !== 2 || isNaN(number)) {
+        alert('Número inválido! Deve conter 2 dígitos.');
+        return;
+    }
+
+    if (!name) {
+        alert('Digite o nome do candidato!');
+        return;
+    }
+
+    if (!party) {
+        alert('Digite a sigla do partido!');
+        return;
+    }
+
+    if (!role) {
+        alert('Selecione ou digite um cargo!');
+        return;
+    }
+
+    const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+    
+    if (candidates.some(c => c.number === number && c.role === role)) {
+        alert('Já existe um candidato com este número para este cargo!');
+        return;
+    }
+
+    const newCandidate = { 
+        role,
+        number, 
+        name, 
+        party,
+        viceName: viceName || "Não informado",
+        viceParty,
+        photo: candidatePhotoUrl 
+    };
+
+    candidates.push(newCandidate);
+    localStorage.setItem('candidates', JSON.stringify(candidates));
+    alert('Candidato cadastrado com sucesso!');
+    closeModal();
+}
+
 function showRolesManagement() {
-    const roles = JSON.parse(localStorage.getItem('electionRoles')) || DEFAULT_ROLES;
+    const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
     
     let rolesHTML = roles.map(role => `
         <div class="role-item">
@@ -331,8 +402,12 @@ function showRolesManagement() {
         </div>
     `).join('');
     
+    if (roles.length === 0) {
+        rolesHTML = '<div class="no-roles-warning">Nenhum cargo cadastrado</div>';
+    }
+    
     const modalContent = `
-        <h2><i class="fas fa-exchange-alt"></i> Gerenciar Cargos</h2>
+        <h2><i class="fas fa-tags"></i> Gerenciar Cargos</h2>
         <div id="roles-list">
             ${rolesHTML}
         </div>
@@ -345,6 +420,7 @@ function showRolesManagement() {
         <div class="form-group">
             <label>Cargo Atual:</label>
             <select id="current-role-select" class="form-control">
+                <option value="">Nenhum cargo selecionado</option>
                 ${roles.map(role => `<option value="${role}" ${role === currentRole ? 'selected' : ''}>${role}</option>`).join('')}
             </select>
         </div>
@@ -365,6 +441,11 @@ function addRole() {
     const newRole = document.getElementById('new-role').value.trim();
     if (newRole) {
         const rolesList = document.getElementById('roles-list');
+        
+        if (rolesList.querySelector('.no-roles-warning')) {
+            rolesList.innerHTML = '';
+        }
+        
         rolesList.innerHTML += `
             <div class="role-item">
                 <input type="text" value="${newRole}" class="role-input">
@@ -378,22 +459,17 @@ function addRole() {
 }
 
 function removeRole(button) {
-    const roleItem = button.closest('.role-item');
-    const roleName = roleItem.querySelector('.role-input').value;
+    button.closest('.role-item').remove();
     
-    if (confirm(`Remover o cargo "${roleName}"?`)) {
-        roleItem.remove();
+    const rolesList = document.getElementById('roles-list');
+    if (rolesList.children.length === 0) {
+        rolesList.innerHTML = '<div class="no-roles-warning">Nenhum cargo cadastrado</div>';
     }
 }
 
 function saveRoles() {
     const roleInputs = document.querySelectorAll('.role-input');
     const roles = Array.from(roleInputs).map(input => input.value.trim()).filter(role => role);
-    
-    if (roles.length === 0) {
-        alert('Adicione pelo menos um cargo!');
-        return;
-    }
     
     localStorage.setItem('electionRoles', JSON.stringify(roles));
     
@@ -403,102 +479,6 @@ function saveRoles() {
     
     updateRoleDisplay();
     alert('Cargos atualizados com sucesso!');
-    closeModal();
-}
-
-function updateRoleDisplay() {
-    document.getElementById('current-role').textContent = currentRole ? ` - ${currentRole}` : '';
-}
-
-function showCandidateForm() {
-    const roles = JSON.parse(localStorage.getItem('electionRoles')) || DEFAULT_ROLES;
-    
-    const modalContent = `
-        <h2><i class="fas fa-user-plus"></i> Cadastrar Candidato</h2>
-        <div class="form-group">
-            <label for="candidate-role">Cargo:</label>
-            <select id="candidate-role" class="form-control">
-                ${roles.map(role => `<option value="${role}">${role}</option>`).join('')}
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="candidate-number">Número (2 dígitos):</label>
-            <input type="text" id="candidate-number" maxlength="2" 
-                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" 
-                   placeholder="Ex: 99" required>
-        </div>
-        <div class="form-group">
-            <label for="candidate-name">Nome:</label>
-            <input type="text" id="candidate-name" placeholder="Nome do candidato" required>
-        </div>
-        <div class="form-group">
-            <label for="candidate-party">Partido:</label>
-            <input type="text" id="candidate-party" placeholder="Sigla do partido" required>
-        </div>
-        <div class="form-group">
-            <label>Foto do Candidato:</label>
-            <div id="register-preview">
-                <i class="fas fa-user"></i>
-            </div>
-            <div class="photo-options">
-                <button onclick="document.getElementById('file-input').click()" class="photo-option-btn">
-                    <i class="fas fa-folder-open"></i> Escolher Foto
-                </button>
-            </div>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="registerCandidate()" class="btn btn-primary" style="flex: 1;">
-                <i class="fas fa-save"></i> Salvar
-            </button>
-            <button onclick="closeModal()" class="btn btn-danger">
-                <i class="fas fa-times"></i> Cancelar
-            </button>
-        </div>
-    `;
-    
-    showModal(modalContent);
-    candidatePhotoUrl = null;
-}
-
-function registerCandidate() {
-    const role = document.getElementById('candidate-role').value;
-    const number = document.getElementById('candidate-number').value;
-    const name = document.getElementById('candidate-name').value;
-    const party = document.getElementById('candidate-party').value;
-
-    if (!number || number.length !== 2 || isNaN(number)) {
-        alert('Número inválido! Deve conter 2 dígitos.');
-        return;
-    }
-
-    if (!name || name.trim() === '') {
-        alert('Digite o nome do candidato!');
-        return;
-    }
-
-    if (!party || party.trim() === '') {
-        alert('Digite a sigla do partido!');
-        return;
-    }
-
-    const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
-    
-    if (candidates.some(c => c.number === number && c.role === role)) {
-        alert('Já existe um candidato com este número para este cargo!');
-        return;
-    }
-
-    const newCandidate = { 
-        role,
-        number, 
-        name: name.trim(), 
-        party: party.trim().toUpperCase(),
-        photo: candidatePhotoUrl 
-    };
-
-    candidates.push(newCandidate);
-    localStorage.setItem('candidates', JSON.stringify(candidates));
-    alert('Candidato cadastrado com sucesso!');
     closeModal();
 }
 
@@ -588,15 +568,12 @@ function resetUrn() {
         localStorage.removeItem('votes');
         localStorage.removeItem('candidates');
         localStorage.removeItem('electionRoles');
-        localStorage.setItem('currentRole', DEFAULT_ROLES[0]);
-        currentRole = DEFAULT_ROLES[0];
+        localStorage.removeItem('currentRole');
+        currentRole = '';
         
-        // Mantém a senha admin e o tempo de eleição
-        const newEndTime = new Date();
-        newEndTime.setHours(newEndTime.getHours() + 2);
-        localStorage.setItem('electionEndTime', newEndTime.toISOString());
-        electionEndTime = newEndTime;
-        electionActive = true;
+        // Mantém apenas a senha admin
+        localStorage.setItem('adminPassword', DEFAULT_PASSWORD);
+        adminPassword = DEFAULT_PASSWORD;
         
         initializeData();
         alert('Urna zerada com sucesso!');
@@ -616,124 +593,81 @@ function generatePDF() {
     
     // Título
     doc.setFontSize(18);
-    doc.text("Relatório de Votação", 105, 20, { align: 'center' });
-    
-    // Data e hora
+    doc.text('Relatório da Urna Eletrônica', 105, 15, { align: 'center' });
     doc.setFontSize(12);
-    doc.text(`Data: ${now.toLocaleDateString()}`, 14, 30);
-    doc.text(`Hora: ${now.toLocaleTimeString()}`, 14, 35);
-    doc.text(`Cargo: ${currentRole}`, 14, 40);
+    doc.text(`Gerado em: ${now.toLocaleString()}`, 105, 22, { align: 'center' });
     
-    // Linha divisória
-    doc.setDrawColor(200, 200, 200);
-    doc.line(14, 45, 196, 45);
-    
-    // Cabeçalho da tabela
+    // Resumo de votos
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text("Nº", 14, 55);
-    doc.text("Candidato", 30, 55);
-    doc.text("Partido", 100, 55);
-    doc.text("Votos", 160, 55);
-    doc.text("%", 180, 55);
+    doc.text('Resumo de Votos', 14, 35);
     
-    // Dados dos candidatos
-    doc.setFont(undefined, 'normal');
-    let y = 65;
+    let yPos = 45;
+    const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
     
-    // Filtra candidatos pelo cargo atual
-    const roleCandidates = candidates.filter(c => c.role === currentRole);
-    
-    // Ordena por votos
-    const sortedCandidates = roleCandidates.sort((a, b) => {
-        const votesA = votes.filter(v => v.type === a.number && v.role === currentRole).length;
-        const votesB = votes.filter(v => v.type === b.number && v.role === currentRole).length;
-        return votesB - votesA;
-    });
-    
-    // Total de votos para este cargo
-    const totalVotes = votes.filter(v => v.role === currentRole && ![NULL_VOTE, BLANK_VOTE].includes(v.type)).length;
-    
-    sortedCandidates.forEach(candidate => {
-        const candidateVotes = votes.filter(v => v.type === candidate.number && v.role === currentRole).length;
-        const percentage = totalVotes > 0 ? (candidateVotes / totalVotes * 100).toFixed(1) : 0;
-        
-        doc.text(candidate.number, 14, y);
-        doc.text(candidate.name, 30, y);
-        doc.text(candidate.party, 100, y);
-        doc.text(candidateVotes.toString(), 160, y);
-        doc.text(percentage + "%", 180, y);
-        
-        y += 10;
-    });
-    
-    // Votos nulos e brancos
-    const nullVotes = votes.filter(v => v.type === NULL_VOTE && v.role === currentRole).length;
-    const blankVotes = votes.filter(v => v.type === BLANK_VOTE && v.role === currentRole).length;
-    
-    y += 5;
-    doc.text("Votos Nulos: " + nullVotes, 14, y);
-    y += 10;
-    doc.text("Votos em Branco: " + blankVotes, 14, y);
-    
-    // Total geral
-    y += 15;
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Total de votos (${currentRole}): ${votes.filter(v => v.role === currentRole).length}`, 14, y);
-    
-    // Salva o PDF
-    doc.save(`relatorio_urna_${currentRole}_${now.toISOString().slice(0,10)}.pdf`);
-    closeModal();
-}
-
-// Funções de acessibilidade
-function toggleAccessibility() {
-    accessibilityMode = !accessibilityMode;
-    document.body.classList.toggle('accessibility-mode', accessibilityMode);
-    
-    if (accessibilityMode) {
-        alert('Modo acessibilidade ativado');
-        speak('Modo acessibilidade ativado');
+    if (roles.length === 0) {
+        doc.setFontSize(12);
+        doc.text('Nenhum cargo definido na eleição', 14, yPos);
+        yPos += 10;
     } else {
-        alert('Modo acessibilidade desativado');
+        roles.forEach(role => {
+            const roleVotes = votes.filter(v => v.role === role);
+            const total = roleVotes.length;
+            
+            doc.setFontSize(12);
+            doc.text(`Cargo: ${role} - Total de votos: ${total}`, 14, yPos);
+            yPos += 10;
+            
+            // Contagem por candidato
+            const candidatesForRole = candidates.filter(c => c.role === role);
+            candidatesForRole.forEach(candidate => {
+                const votesForCandidate = roleVotes.filter(v => v.type === candidate.number).length;
+                doc.text(`- ${candidate.number}: ${candidate.name} (${candidate.party}): ${votesForCandidate} votos`, 20, yPos);
+                yPos += 7;
+            });
+            
+            // Votos nulos e brancos
+            const nullVotes = roleVotes.filter(v => v.type === NULL_VOTE).length;
+            const blankVotes = roleVotes.filter(v => v.type === BLANK_VOTE).length;
+            
+            doc.text(`- Votos nulos: ${nullVotes}`, 20, yPos);
+            yPos += 7;
+            doc.text(`- Votos em branco: ${blankVotes}`, 20, yPos);
+            yPos += 10;
+        });
     }
-}
-
-function speak(text) {
-    if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pt-BR';
-        speechSynthesis.speak(utterance);
+    
+    // Lista completa de votos (se houver espaço)
+    if (yPos < 250) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('Registro Completo de Votos', 105, 15, { align: 'center' });
+        
+        yPos = 25;
+        votes.forEach((vote, index) => {
+            if (yPos > 280) {
+                doc.addPage();
+                yPos = 15;
+            }
+            
+            let voteInfo;
+            if (vote.type === NULL_VOTE) {
+                voteInfo = `VOTO NULO (${vote.role || 'Sem cargo'})`;
+            } else if (vote.type === BLANK_VOTE) {
+                voteInfo = `VOTO EM BRANCO (${vote.role || 'Sem cargo'})`;
+            } else {
+                const candidate = candidates.find(c => c.number === vote.type && c.role === vote.role);
+                voteInfo = candidate 
+                    ? `Voto para ${candidate.name} (${candidate.party}) - ${vote.role}`
+                    : `Voto inválido (número ${vote.type})`;
+            }
+            
+            const voteTime = new Date(vote.timestamp).toLocaleString();
+            doc.text(`${index + 1}. ${voteTime} - ${voteInfo}`, 14, yPos);
+            yPos += 10;
+        });
     }
-}
-
-// Funções de biometria simulada
-function showBiometricModal() {
-    document.getElementById('biometric-modal').style.display = 'block';
-}
-
-function closeBiometricModal() {
-    document.getElementById('biometric-modal').style.display = 'none';
-}
-
-function simulateBiometric() {
-    document.getElementById('biometric-status').textContent = 'Autenticando...';
-    setTimeout(() => {
-        document.getElementById('biometric-status').textContent = 'Autenticação bem-sucedida!';
-        setTimeout(() => {
-            closeBiometricModal();
-            alert('Autenticação biométrica confirmada. Pode votar.');
-        }, 1000);
-    }, 2000);
-}
-
-// Verifica tempo da eleição
-function checkElectionTime() {
-    const now = new Date();
-    if (now >= electionEndTime) {
-        electionActive = false;
-    }
+    
+    doc.save(`relatorio-urna-${now.toISOString().slice(0,10)}.pdf`);
 }
 
 // Funções auxiliares
@@ -744,104 +678,37 @@ function showModal(content) {
 
 function closeModal() {
     document.getElementById('admin-modal').style.display = 'none';
-    document.getElementById('modal-content').innerHTML = '';
-    currentAction = null;
-    candidatePhotoUrl = null;
-    
-    // Limpa todos os inputs do modal
-    const inputs = document.querySelectorAll('#modal-content input');
-    inputs.forEach(input => {
-        input.value = '';
-    });
-    
-    // Reseta a pré-visualização de foto
-    const preview = document.getElementById('register-preview');
-    if (preview) {
-        preview.innerHTML = '<i class="fas fa-user"></i>';
-    }
-    
-    // Reseta o input de arquivo
-    const fileInput = document.getElementById('file-input');
-    if (fileInput) {
-        fileInput.value = '';
+    document.getElementById('file-input').value = '';
+}
+
+function toggleAccessibility() {
+    accessibilityMode = !accessibilityMode;
+    document.body.classList.toggle('accessibility-mode');
+    alert(`Modo acessibilidade ${accessibilityMode ? 'ativado' : 'desativado'}`);
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'pt-BR';
+        speechSynthesis.speak(utterance);
     }
 }
 
-// Manipulação de arquivos
-document.getElementById('file-input').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            candidatePhotoUrl = event.target.result;
-            const preview = document.getElementById('register-preview');
-            if (preview) {
-                preview.innerHTML = `<img src="${candidatePhotoUrl}" alt="Pré-visualização" style="max-width:100%; height:auto;">`;
-            }
-        };
-        reader.readAsDataURL(e.target.files[0]);
-    }
-});
-
-// Suporte ao teclado físico
-document.addEventListener('keydown', function(event) {
-    const modalOpen = document.getElementById('admin-modal').style.display === 'block' || 
-                     document.getElementById('biometric-modal').style.display === 'block';
-    
-    if (modalOpen) {
-        if (event.key === 'Escape') {
-            closeModal();
-            closeBiometricModal();
-        }
-        return;
-    }
-    
-    if (!electionActive) return;
-    
-    switch(event.key) {
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-            addNumber(event.key);
-            break;
-        case 'Enter':
-            confirmVote();
-            event.preventDefault();
-            break;
-        case 'Backspace':
-        case 'Delete':
-            backspace();
-            event.preventDefault();
-            break;
-        case 'Escape':
-            closeModal();
-            break;
-    }
-});
-
 // Inicialização
-document.addEventListener('DOMContentLoaded', function() {
+window.onload = function() {
     initializeData();
-    updateClock();
     
-    // Fecha o modal ao clicar fora
-    window.addEventListener('click', function(event) {
-        if (event.target.classList.contains('modal')) {
+    // Configura o teclado físico
+    document.addEventListener('keydown', function(e) {
+        if (e.key >= '0' && e.key <= '9') {
+            addNumber(e.key);
+        } else if (e.key === 'Backspace') {
+            correct();
+        } else if (e.key === 'Enter') {
+            confirmVote();
+        } else if (e.key === 'Escape') {
             closeModal();
-            closeBiometricModal();
         }
     });
-    
-    // Verifica se é a primeira visita para mostrar biometria simulada
-    if (!localStorage.getItem('biometricShown')) {
-        setTimeout(showBiometricModal, 2000);
-        localStorage.setItem('biometricShown', 'true');
-    }
-    
-    // Garante que todas as funções estão disponíveis globalmente
-    window.addNumber = addNumber;
-    window.correct = correct;
-    window.voteNull = voteNull;
-    window.voteBlank = voteBlank;
-    window.confirmVote = confirmVote;
-    window.toggleAccessibility = toggleAccessibility;
-    window.simulateBiometric = simulateBiometric;
-});
+};

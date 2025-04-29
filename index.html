@@ -5,47 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urna Eletrônica</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-vote-yea"></i> Urna Eletrônica <span id="current-role"></span></h1>
-            <div id="clock"></div>
+            <div class="header-content">
+                <h1><i class="fas fa-vote-yea"></i> URNA ELETRÔNICA <span id="current-role-display"></span></h1>
+                <div id="clock"></div>
+            </div>
         </header>
 
         <main>
             <div class="urna">
+                <!-- Display da Urna -->
                 <div class="display">
                     <div class="screen">
-                        <input type="text" id="vote-input" maxlength="2" readonly placeholder="Número">
-                        <div id="candidate-info"></div>
+                        <div class="vote-instruction">SEU VOTO PARA</div>
+                        <div class="vote-role" id="vote-role-display"></div>
+                        
+                        <div class="number-input">
+                            <span>Número:</span>
+                            <input type="text" id="vote-input" maxlength="2" readonly>
+                        </div>
+                        
+                        <div class="candidate-info">
+                            <div class="photo-container">
+                                <div class="photo-placeholder"><i class="fas fa-user"></i></div>
+                            </div>
+                            <div class="info-container">
+                                <div class="info-line"><span>Nome:</span> <span id="candidate-name"></span></div>
+                                <div class="info-line"><span>Partido:</span> <span id="candidate-party"></span></div>
+                                <div class="info-line"><span>Vice:</span> <span id="vice-name"></span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="vote-messages">
+                            <div class="message" id="message-line1"></div>
+                            <div class="message" id="message-line2"></div>
+                        </div>
                     </div>
-                    <div class="brand">
-                        <span>JUSTIÇA ELEITORAL</span>
-                    </div>
+                    <div class="brand">JUSTIÇA ELEITORAL</div>
                 </div>
 
+                <!-- Teclado da Urna -->
                 <div class="keyboard">
-                    <button class="key" onclick="addNumber('1')">1</button>
-                    <button class="key" onclick="addNumber('2')">2</button>
-                    <button class="key" onclick="addNumber('3')">3</button>
-                    <button class="key" onclick="addNumber('4')">4</button>
-                    <button class="key" onclick="addNumber('5')">5</button>
-                    <button class="key" onclick="addNumber('6')">6</button>
-                    <button class="key" onclick="addNumber('7')">7</button>
-                    <button class="key" onclick="addNumber('8')">8</button>
-                    <button class="key" onclick="addNumber('9')">9</button>
-                    <button class="key" onclick="addNumber('0')">0</button>
-                    <button class="key btn-correct" onclick="correct()">CORRIGE</button>
-                    <button class="key btn-confirm" onclick="confirmVote()">CONFIRMA</button>
-                    <button class="key btn-null" onclick="voteNull()">NULO</button>
-                    <button class="key btn-blank" onclick="voteBlank()">BRANCO</button>
+                    <div class="key-row">
+                        <button class="key" onclick="addNumber('1')">1</button>
+                        <button class="key" onclick="addNumber('2')">2</button>
+                        <button class="key" onclick="addNumber('3')">3</button>
+                    </div>
+                    <div class="key-row">
+                        <button class="key" onclick="addNumber('4')">4</button>
+                        <button class="key" onclick="addNumber('5')">5</button>
+                        <button class="key" onclick="addNumber('6')">6</button>
+                    </div>
+                    <div class="key-row">
+                        <button class="key" onclick="addNumber('7')">7</button>
+                        <button class="key" onclick="addNumber('8')">8</button>
+                        <button class="key" onclick="addNumber('9')">9</button>
+                    </div>
+                    <div class="key-row">
+                        <button class="key btn-null" onclick="voteNull()">NULO</button>
+                        <button class="key" onclick="addNumber('0')">0</button>
+                        <button class="key btn-blank" onclick="voteBlank()">BRANCO</button>
+                    </div>
+                    <div class="action-row">
+                        <button class="key btn-correct" onclick="correct()">CORRIGE</button>
+                        <button class="key btn-confirm" onclick="confirmVote()">CONFIRMA</button>
+                    </div>
                 </div>
             </div>
 
+            <!-- Painel Administrativo -->
             <div class="admin-panel">
                 <button onclick="showAdminLogin('report')">
                     <i class="fas fa-file-pdf"></i> Relatório
@@ -54,7 +86,7 @@
                     <i class="fas fa-user-plus"></i> Cadastrar
                 </button>
                 <button onclick="showAdminLogin('roles')">
-                    <i class="fas fa-exchange-alt"></i> Cargos
+                    <i class="fas fa-tags"></i> Cargos
                 </button>
                 <button onclick="showAdminLogin('password')">
                     <i class="fas fa-key"></i> Senha
@@ -77,17 +109,7 @@
         </div>
     </div>
 
-    <!-- Modal de Biometria Simulada -->
-    <div id="biometric-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeBiometricModal()">&times;</span>
-            <h2><i class="fas fa-fingerprint"></i> Autenticação Biométrica</h2>
-            <div id="biometric-status">Coloque seu dedo no sensor</div>
-            <div class="biometric-sensor" onclick="simulateBiometric()"></div>
-        </div>
-    </div>
-
-    <!-- Input oculto para upload de foto -->
+    <!-- Input para upload de foto -->
     <input type="file" id="file-input" accept="image/*" style="display:none">
 
     <script src="script.js"></script>
