@@ -12,8 +12,9 @@ let candidatePhotoUrl = null;
 let currentRole = '';
 let accessibilityMode = false;
 let electionActive = true;
+let isProcessing = false;
 
-// Inicialização
+// Inicialização dos dados
 function initializeData() {
     if (!localStorage.getItem('candidates')) {
         localStorage.setItem('candidates', JSON.stringify([]));
@@ -54,7 +55,7 @@ function updateClock() {
     const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
     
     clock.textContent = `${day}/${month}/${year} ${hours}:${minutes} (BRT)`;
-    setTimeout(updateClock, 60000); // Atualiza a cada minuto
+    setTimeout(updateClock, 60000);
 }
 
 // Atualiza mensagens na tela
@@ -81,7 +82,7 @@ function updateMessages() {
 
 // Funções da urna
 function addNumber(num) {
-    if (!electionActive) return;
+    if (!electionActive || isProcessing) return;
     if (currentNumber.length < 2) {
         currentNumber += num;
         updateDisplay();
@@ -94,6 +95,7 @@ function addNumber(num) {
 }
 
 function correct() {
+    if (isProcessing) return;
     currentNumber = '';
     currentCandidate = null;
     updateDisplay();
@@ -104,7 +106,7 @@ function correct() {
 }
 
 function confirmVote() {
-    if (!electionActive) return;
+    if (!electionActive || isProcessing) return;
     
     if (currentNumber.length === 0) {
         voteBlank();
@@ -121,37 +123,61 @@ function confirmVote() {
         return;
     }
 
-    registerVote(currentNumber);
-    alert(`Voto confirmado para ${currentCandidate.name} (${currentCandidate.party})!`);
-    correct();
-    
-    if (accessibilityMode) {
-        speak(`Voto confirmado para ${currentCandidate.name}`);
+    isProcessing = true;
+    try {
+        registerVote(currentNumber);
+        alert(`Voto confirmado para ${currentCandidate.name} (${currentCandidate.party})!`);
+        correct();
+        
+        if (accessibilityMode) {
+            speak(`Voto confirmado para ${currentCandidate.name}`);
+        }
+    } catch (error) {
+        console.error("Erro ao confirmar voto:", error);
+        alert("Ocorreu um erro ao registrar seu voto.");
+    } finally {
+        isProcessing = false;
     }
 }
 
 function voteNull() {
-    if (!electionActive) return;
+    if (!electionActive || isProcessing) return;
     if (confirm("Deseja votar NULO?")) {
-        registerVote(NULL_VOTE);
-        alert("Voto NULO confirmado!");
-        correct();
-        
-        if (accessibilityMode) {
-            speak('Voto nulo confirmado');
+        isProcessing = true;
+        try {
+            registerVote(NULL_VOTE);
+            alert("Voto NULO confirmado!");
+            correct();
+            
+            if (accessibilityMode) {
+                speak('Voto nulo confirmado');
+            }
+        } catch (error) {
+            console.error("Erro ao registrar voto nulo:", error);
+            alert("Ocorreu um erro ao registrar o voto nulo.");
+        } finally {
+            isProcessing = false;
         }
     }
 }
 
 function voteBlank() {
-    if (!electionActive) return;
+    if (!electionActive || isProcessing) return;
     if (confirm("Deseja votar em BRANCO?")) {
-        registerVote(BLANK_VOTE);
-        alert("Voto em BRANCO confirmado!");
-        correct();
-        
-        if (accessibilityMode) {
-            speak('Voto em branco confirmado');
+        isProcessing = true;
+        try {
+            registerVote(BLANK_VOTE);
+            alert("Voto em BRANCO confirmado!");
+            correct();
+            
+            if (accessibilityMode) {
+                speak('Voto em branco confirmado');
+            }
+        } catch (error) {
+            console.error("Erro ao registrar voto em branco:", error);
+            alert("Ocorreu um erro ao registrar o voto em branco.");
+        } finally {
+            isProcessing = false;
         }
     }
 }
@@ -241,6 +267,8 @@ function showAdminLogin(action) {
 }
 
 function verifyAdminPassword() {
+    if (isProcessing) return;
+    
     const password = document.getElementById('password').value;
     if (password === adminPassword) {
         switch(currentAction) {
@@ -299,25 +327,21 @@ function showCandidateForm() {
             <input type="text" id="vice-name" placeholder="Nome completo do vice">
         </div>
         <div class="form-group">
-            <label for="vice-party">Partido do Vice:</label>
-            <input type="text" id="vice-party" placeholder="Deixe em branco para usar o mesmo partido">
-        </div>
-        <div class="form-group">
-            <label>Foto do Candidato:</label>
+            <label>Foto do Candidato (opcional):</label>
             <div id="register-preview">
                 <i class="fas fa-user"></i>
             </div>
             <div class="photo-options">
-                <button onclick="document.getElementById('file-input').click()" class="btn btn-primary">
+                <button type="button" id="upload-btn" class="btn btn-primary">
                     <i class="fas fa-folder-open"></i> Escolher Foto
                 </button>
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
-            <button onclick="registerCandidate()" class="btn btn-primary" style="flex: 1;">
+            <button type="button" id="save-candidate" class="btn btn-primary" style="flex: 1;">
                 <i class="fas fa-save"></i> Salvar
             </button>
-            <button onclick="closeModal()" class="btn btn-danger">
+            <button type="button" onclick="closeModal()" class="btn btn-danger">
                 <i class="fas fa-times"></i> Cancelar
             </button>
         </div>
@@ -325,69 +349,111 @@ function showCandidateForm() {
     
     showModal(modalContent);
     candidatePhotoUrl = null;
-    
+
+    // Configura o upload de foto
+    document.getElementById('upload-btn').addEventListener('click', function() {
+        document.getElementById('file-input').click();
+    });
+
     document.getElementById('file-input').onchange = function(e) {
         const file = e.target.files[0];
-        if (file) {
+        if (file && file.type.match('image.*')) {
+            isProcessing = true;
+            document.getElementById('upload-btn').disabled = true;
+            
             const reader = new FileReader();
             reader.onload = function(event) {
                 candidatePhotoUrl = event.target.result;
-                document.getElementById('register-preview').innerHTML = `<img src="${candidatePhotoUrl}" alt="Foto do candidato">`;
+                document.getElementById('register-preview').innerHTML = 
+                    `<img src="${candidatePhotoUrl}" alt="Foto do candidato" style="max-width:100%;max-height:100%;">`;
+                isProcessing = false;
+                document.getElementById('upload-btn').disabled = false;
+            };
+            reader.onerror = function() {
+                alert('Erro ao carregar a imagem. Por favor, tente novamente.');
+                isProcessing = false;
+                document.getElementById('upload-btn').disabled = false;
             };
             reader.readAsDataURL(file);
+        } else {
+            alert('Por favor, selecione um arquivo de imagem válido (JPEG, PNG, etc.)');
         }
     };
+
+    // Configura o botão de salvar
+    document.getElementById('save-candidate').addEventListener('click', function() {
+        if (isProcessing) return;
+        registerCandidate();
+    });
 }
 
 function registerCandidate() {
-    const role = document.getElementById('candidate-role').value.trim();
-    const number = document.getElementById('candidate-number').value;
-    const name = document.getElementById('candidate-name').value.trim();
-    const party = document.getElementById('candidate-party').value.trim().toUpperCase();
-    const viceName = document.getElementById('vice-name').value.trim();
-    const viceParty = document.getElementById('vice-party').value.trim().toUpperCase() || party;
-
-    if (!number || number.length !== 2 || isNaN(number)) {
-        alert('Número inválido! Deve conter 2 dígitos.');
-        return;
-    }
-
-    if (!name) {
-        alert('Digite o nome do candidato!');
-        return;
-    }
-
-    if (!party) {
-        alert('Digite a sigla do partido!');
-        return;
-    }
-
-    if (!role) {
-        alert('Selecione ou digite um cargo!');
-        return;
-    }
-
-    const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+    if (isProcessing) return;
+    isProcessing = true;
     
-    if (candidates.some(c => c.number === number && c.role === role)) {
-        alert('Já existe um candidato com este número para este cargo!');
-        return;
+    try {
+        // Obter valores dos campos
+        const role = document.getElementById('candidate-role').value.trim();
+        const number = document.getElementById('candidate-number').value;
+        const name = document.getElementById('candidate-name').value.trim();
+        const party = document.getElementById('candidate-party').value.trim().toUpperCase();
+        const viceName = document.getElementById('vice-name').value.trim();
+
+        // Validações
+        if (!role) {
+            alert('Por favor, selecione um cargo!');
+            return;
+        }
+
+        if (!number || number.length !== 2 || isNaN(number)) {
+            alert('Número inválido! Deve conter exatamente 2 dígitos.');
+            return;
+        }
+
+        if (!name) {
+            alert('Por favor, informe o nome do candidato!');
+            return;
+        }
+
+        if (!party || party.length < 2) {
+            alert('Por favor, informe a sigla do partido (mínimo 2 caracteres)!');
+            return;
+        }
+
+        // Obter lista atual de candidatos
+        const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+
+        // Verificar se número já está em uso para este cargo
+        if (candidates.some(c => c.number === number && c.role === role)) {
+            alert(`Já existe um candidato cadastrado com o número ${number} para o cargo de ${role}!`);
+            return;
+        }
+
+        // Criar novo candidato
+        const newCandidate = {
+            role,
+            number,
+            name,
+            party,
+            viceName: viceName || "Não informado",
+            viceParty: party,
+            photo: candidatePhotoUrl
+        };
+
+        // Adicionar à lista e salvar
+        candidates.push(newCandidate);
+        localStorage.setItem('candidates', JSON.stringify(candidates));
+
+        // Feedback e limpeza
+        alert('Candidato cadastrado com sucesso!');
+        closeModal();
+    } catch (error) {
+        console.error('Erro ao cadastrar candidato:', error);
+        alert('Ocorreu um erro ao cadastrar o candidato. Por favor, tente novamente.');
+    } finally {
+        isProcessing = false;
+        document.getElementById('file-input').value = '';
     }
-
-    const newCandidate = { 
-        role,
-        number, 
-        name, 
-        party,
-        viceName: viceName || "Não informado",
-        viceParty,
-        photo: candidatePhotoUrl 
-    };
-
-    candidates.push(newCandidate);
-    localStorage.setItem('candidates', JSON.stringify(candidates));
-    alert('Candidato cadastrado com sucesso!');
-    closeModal();
 }
 
 function showRolesManagement() {
@@ -674,11 +740,14 @@ function generatePDF() {
 function showModal(content) {
     document.getElementById('modal-content').innerHTML = content;
     document.getElementById('admin-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
 }
 
 function closeModal() {
     document.getElementById('admin-modal').style.display = 'none';
+    document.body.style.overflow = 'auto';
     document.getElementById('file-input').value = '';
+    isProcessing = false;
 }
 
 function toggleAccessibility() {
