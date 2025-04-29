@@ -392,70 +392,82 @@ function registerCandidate() {
     isProcessing = true;
     
     try {
-        // Obter valores dos campos
+        // Obter e validar campos
         const role = document.getElementById('candidate-role').value.trim();
         const number = document.getElementById('candidate-number').value;
         const name = document.getElementById('candidate-name').value.trim();
         const party = document.getElementById('candidate-party').value.trim().toUpperCase();
         const viceName = document.getElementById('vice-name').value.trim();
 
-        // Validações
-        if (!role) {
-            alert('Por favor, selecione um cargo!');
+        // Validações robustas
+        if (!role || role.length < 3) {
+            alert('Por favor, informe um cargo válido (mínimo 3 caracteres)!');
             return;
         }
 
         if (!number || number.length !== 2 || isNaN(number)) {
-            alert('Número inválido! Deve conter exatamente 2 dígitos.');
+            alert('Número inválido! Deve conter exatamente 2 dígitos numéricos.');
             return;
         }
 
-        if (!name) {
-            alert('Por favor, informe o nome do candidato!');
+        if (!name || name.length < 5) {
+            alert('Por favor, informe o nome completo do candidato (mínimo 5 caracteres)!');
             return;
         }
 
-        if (!party || party.length < 2) {
-            alert('Por favor, informe a sigla do partido (mínimo 2 caracteres)!');
+        if (!party || party.length < 2 || party.length > 10) {
+            alert('Por favor, informe uma sigla de partido válida (2 a 10 caracteres)!');
             return;
         }
 
         // Obter lista atual de candidatos
-        const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+        let candidates = [];
+        try {
+            const candidatesData = localStorage.getItem('candidates');
+            candidates = candidatesData ? JSON.parse(candidatesData) : [];
+        } catch (e) {
+            console.error("Erro ao ler candidatos:", e);
+            candidates = [];
+        }
 
-        // Verificar se número já está em uso para este cargo
-        if (candidates.some(c => c.number === number && c.role === role)) {
-            alert(`Já existe um candidato cadastrado com o número ${number} para o cargo de ${role}!`);
+        // Verificar duplicidade
+        const existingCandidate = candidates.find(c => 
+            c.number === number && c.role.toLowerCase() === role.toLowerCase()
+        );
+
+        if (existingCandidate) {
+            alert(`Já existe um candidato cadastrado com o número ${number} para ${role}!\nNome: ${existingCandidate.name}\nPartido: ${existingCandidate.party}`);
             return;
         }
 
         // Criar novo candidato
         const newCandidate = {
-            role,
-            number,
-            name,
-            party,
+            role: role,
+            number: number,
+            name: name,
+            party: party,
             viceName: viceName || "Não informado",
-            viceParty: party,
-            photo: candidatePhotoUrl
+            viceParty: party, // Usa o mesmo partido do candidato
+            photo: candidatePhotoUrl || null
         };
 
-        // Adicionar à lista e salvar
+        // Adicionar e salvar
         candidates.push(newCandidate);
         localStorage.setItem('candidates', JSON.stringify(candidates));
 
         // Feedback e limpeza
-        alert('Candidato cadastrado com sucesso!');
+        alert(`Candidato cadastrado com sucesso!\n${name} (${party}) - ${role} Nº ${number}`);
         closeModal();
+        
     } catch (error) {
-        console.error('Erro ao cadastrar candidato:', error);
-        alert('Ocorreu um erro ao cadastrar o candidato. Por favor, tente novamente.');
+        console.error('Erro no cadastro:', error);
+        alert(`Erro ao cadastrar: ${error.message || 'Verifique os dados e tente novamente'}`);
     } finally {
         isProcessing = false;
         document.getElementById('file-input').value = '';
+        candidatePhotoUrl = null;
     }
 }
-
 function showRolesManagement() {
     const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
     
