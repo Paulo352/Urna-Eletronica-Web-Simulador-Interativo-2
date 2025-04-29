@@ -392,52 +392,76 @@ function registerCandidate() {
     isProcessing = true;
     
     try {
-        // Obter e validar campos
-        const role = document.getElementById('candidate-role').value.trim();
-        const number = document.getElementById('candidate-number').value;
-        const name = document.getElementById('candidate-name').value.trim();
-        const party = document.getElementById('candidate-party').value.trim().toUpperCase();
-        const viceName = document.getElementById('vice-name').value.trim();
+        // Obter elementos de forma segura
+        const roleElement = document.getElementById('candidate-role');
+        const numberElement = document.getElementById('candidate-number');
+        const nameElement = document.getElementById('candidate-name');
+        const partyElement = document.getElementById('candidate-party');
+        const viceElement = document.getElementById('vice-name');
 
-        // Validações robustas
-        if (!role || role.length < 3) {
-            alert('Por favor, informe um cargo válido (mínimo 3 caracteres)!');
-            return;
+        // Verificar se elementos existem
+        if (!roleElement || !numberElement || !nameElement || !partyElement || !viceElement) {
+            throw new Error('Elementos do formulário não encontrados!');
         }
 
-        if (!number || number.length !== 2 || isNaN(number)) {
-            alert('Número inválido! Deve conter exatamente 2 dígitos numéricos.');
-            return;
+        // Obter valores com fallback para string vazia
+        const role = roleElement.value ? roleElement.value.trim() : '';
+        const number = numberElement.value ? numberElement.value.trim() : '';
+        const name = nameElement.value ? nameElement.value.trim() : '';
+        const party = partyElement.value ? partyElement.value.trim().toUpperCase() : '';
+        const viceName = viceElement.value ? viceElement.value.trim() : '';
+
+        // Validações passo a passo
+        if (!role) {
+            throw new Error('Por favor, informe o cargo!');
         }
 
-        if (!name || name.length < 5) {
-            alert('Por favor, informe o nome completo do candidato (mínimo 5 caracteres)!');
-            return;
+        if (role.length < 3) {
+            throw new Error('O cargo deve ter pelo menos 3 caracteres!');
         }
 
-        if (!party || party.length < 2 || party.length > 10) {
-            alert('Por favor, informe uma sigla de partido válida (2 a 10 caracteres)!');
-            return;
+        if (!number) {
+            throw new Error('Por favor, informe o número do candidato!');
         }
 
-        // Obter lista atual de candidatos
+        if (number.length !== 2 || isNaN(number)) {
+            throw new Error('O número deve conter exatamente 2 dígitos!');
+        }
+
+        if (!name) {
+            throw new Error('Por favor, informe o nome do candidato!');
+        }
+
+        if (name.length < 5) {
+            throw new Error('O nome deve ter pelo menos 5 caracteres!');
+        }
+
+        if (!party) {
+            throw new Error('Por favor, informe a sigla do partido!');
+        }
+
+        if (party.length < 2 || party.length > 10) {
+            throw new Error('A sigla do partido deve ter entre 2 e 10 caracteres!');
+        }
+
+        // Obter lista de candidatos existente
         let candidates = [];
         try {
-            const candidatesData = localStorage.getItem('candidates');
-            candidates = candidatesData ? JSON.parse(candidatesData) : [];
+            const storedCandidates = localStorage.getItem('candidates');
+            candidates = storedCandidates ? JSON.parse(storedCandidates) : [];
         } catch (e) {
-            console.error("Erro ao ler candidatos:", e);
+            console.error('Erro ao ler candidatos:', e);
             candidates = [];
         }
 
         // Verificar duplicidade
-        const existingCandidate = candidates.find(c => 
+        const duplicate = candidates.some(c => 
             c.number === number && c.role.toLowerCase() === role.toLowerCase()
         );
 
-        if (existingCandidate) {
-            alert(`Já existe um candidato cadastrado com o número ${number} para ${role}!\nNome: ${existingCandidate.name}\nPartido: ${existingCandidate.party}`);
-            return;
+        if (duplicate) {
+            const existing = candidates.find(c => c.number === number);
+            throw new Error(`Número já usado por: ${existing.name} (${existing.party})`);
         }
 
         // Criar novo candidato
@@ -447,27 +471,41 @@ function registerCandidate() {
             name: name,
             party: party,
             viceName: viceName || "Não informado",
-            viceParty: party, // Usa o mesmo partido do candidato
-            photo: candidatePhotoUrl || null
+            viceParty: party,
+            photo: candidatePhotoUrl || null,
+            createdAt: new Date().toISOString()
         };
 
-        // Adicionar e salvar
+        // Atualizar lista e salvar
         candidates.push(newCandidate);
         localStorage.setItem('candidates', JSON.stringify(candidates));
 
-        // Feedback e limpeza
-        alert(`Candidato cadastrado com sucesso!\n${name} (${party}) - ${role} Nº ${number}`);
-        closeModal();
+        // Feedback de sucesso
+        alert(`
+          Candidato cadastrado com sucesso!
+          \nCargo: ${role}
+          \nNúmero: ${number}
+          \nNome: ${name}
+          \nPartido: ${party}
+          ${viceName ? `\nVice: ${viceName}` : ''}
+        `);
         
+        // Fechar modal e resetar
+        closeModal();
+        return true;
+
     } catch (error) {
         console.error('Erro no cadastro:', error);
-        alert(`Erro ao cadastrar: ${error.message || 'Verifique os dados e tente novamente'}`);
+        alert(error.message || 'Erro ao cadastrar candidato. Verifique os dados.');
+        return false;
     } finally {
         isProcessing = false;
-        document.getElementById('file-input').value = '';
-        candidatePhotoUrl = null;
+        // Limpar upload de foto
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) fileInput.value = '';
     }
 }
+
 function showRolesManagement() {
     const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
     
