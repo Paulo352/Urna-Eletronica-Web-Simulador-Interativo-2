@@ -16,74 +16,85 @@ let isProcessing = false;
 
 // Inicialização dos dados
 function initializeData() {
-    if (!localStorage.getItem('candidates')) {
-        localStorage.setItem('candidates', JSON.stringify([]));
+    try {
+        if (!localStorage.getItem('candidates')) {
+            localStorage.setItem('candidates', JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('votes')) {
+            localStorage.setItem('votes', JSON.stringify([]));
+        }
+        
+        adminPassword = localStorage.getItem('adminPassword') || DEFAULT_PASSWORD;
+        localStorage.setItem('adminPassword', adminPassword);
+        
+        if (!localStorage.getItem('electionRoles')) {
+            localStorage.setItem('electionRoles', JSON.stringify([]));
+        }
+        
+        currentRole = localStorage.getItem('currentRole') || '';
+        
+        updateRoleDisplay();
+        updateClock();
+        updateMessages();
+    } catch (e) {
+        console.error("Erro na inicialização:", e);
+        // Recuperação básica em caso de erro
+        localStorage.clear();
+        initializeData();
     }
-    
-    if (!localStorage.getItem('votes')) {
-        localStorage.setItem('votes', JSON.stringify([]));
-    }
-    
-    if (!localStorage.getItem('adminPassword')) {
-        localStorage.setItem('adminPassword', DEFAULT_PASSWORD);
-    } else {
-        adminPassword = localStorage.getItem('adminPassword');
-    }
-    
-    if (!localStorage.getItem('electionRoles')) {
-        localStorage.setItem('electionRoles', JSON.stringify([]));
-    }
-    
-    if (localStorage.getItem('currentRole')) {
-        currentRole = localStorage.getItem('currentRole');
-    }
-    
-    updateRoleDisplay();
-    updateClock();
-    updateMessages();
 }
 
 // Atualiza o relógio
 function updateClock() {
-    const brasiliaTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-    const clock = document.getElementById('clock');
-    
-    const day = String(brasiliaTime.getDate()).padStart(2, '0');
-    const month = String(brasiliaTime.getMonth() + 1).padStart(2, '0');
-    const year = brasiliaTime.getFullYear();
-    const hours = String(brasiliaTime.getHours()).padStart(2, '0');
-    const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
-    
-    clock.textContent = `${day}/${month}/${year} ${hours}:${minutes} (BRT)`;
-    setTimeout(updateClock, 60000);
+    try {
+        const brasiliaTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+        const clock = document.getElementById('clock');
+        
+        const day = String(brasiliaTime.getDate()).padStart(2, '0');
+        const month = String(brasiliaTime.getMonth() + 1).padStart(2, '0');
+        const year = brasiliaTime.getFullYear();
+        const hours = String(brasiliaTime.getHours()).padStart(2, '0');
+        const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
+        
+        clock.textContent = `${day}/${month}/${year} ${hours}:${minutes} (BRT)`;
+        setTimeout(updateClock, 60000);
+    } catch (e) {
+        console.error("Erro ao atualizar relógio:", e);
+        setTimeout(updateClock, 60000);
+    }
 }
 
 // Atualiza mensagens na tela
 function updateMessages() {
-    const line1 = document.getElementById('message-line1');
-    const line2 = document.getElementById('message-line2');
-    
-    if (currentNumber.length === 0) {
-        line1.textContent = "Aperte a tecla:";
-        line2.textContent = "BRANCO para VOTAR EM BRANCO";
-    } else if (currentNumber.length === 1) {
-        line1.textContent = "Aperte a tecla:";
-        line2.textContent = "CORRIGE para REINICIAR";
-    } else if (currentNumber.length === 2) {
-        if (currentCandidate) {
+    try {
+        const line1 = document.getElementById('message-line1');
+        const line2 = document.getElementById('message-line2');
+        
+        if (currentNumber.length === 0) {
             line1.textContent = "Aperte a tecla:";
-            line2.textContent = "VERDE para CONFIRMAR este voto";
-        } else {
-            line1.textContent = "NÚMERO ERRADO";
-            line2.textContent = "Aperte CORRIGE para REINICIAR";
+            line2.textContent = "BRANCO para VOTAR EM BRANCO";
+        } else if (currentNumber.length === 1) {
+            line1.textContent = "Aperte a tecla:";
+            line2.textContent = "CORRIGE para REINICIAR";
+        } else if (currentNumber.length === 2) {
+            if (currentCandidate) {
+                line1.textContent = "Aperte a tecla:";
+                line2.textContent = "VERDE para CONFIRMAR este voto";
+            } else {
+                line1.textContent = "NÚMERO ERRADO";
+                line2.textContent = "Aperte CORRIGE para REINICIAR";
+            }
         }
+    } catch (e) {
+        console.error("Erro ao atualizar mensagens:", e);
     }
 }
 
 // Funções da urna
 function addNumber(num) {
     if (!electionActive || isProcessing) return;
-    if (currentNumber.length < 2) {
+    if (currentNumber.length < 2 && /^[0-9]$/.test(num)) {
         currentNumber += num;
         updateDisplay();
         checkCandidate();
@@ -125,12 +136,15 @@ function confirmVote() {
 
     isProcessing = true;
     try {
-        registerVote(currentNumber);
-        alert(`Voto confirmado para ${currentCandidate.name} (${currentCandidate.party})!`);
-        correct();
-        
-        if (accessibilityMode) {
-            speak(`Voto confirmado para ${currentCandidate.name}`);
+        if (registerVote(currentNumber)) {
+            alert(`Voto confirmado para ${currentCandidate.name} (${currentCandidate.party})!`);
+            correct();
+            
+            if (accessibilityMode) {
+                speak(`Voto confirmado para ${currentCandidate.name}`);
+            }
+        } else {
+            throw new Error("Falha ao registrar voto");
         }
     } catch (error) {
         console.error("Erro ao confirmar voto:", error);
@@ -145,12 +159,15 @@ function voteNull() {
     if (confirm("Deseja votar NULO?")) {
         isProcessing = true;
         try {
-            registerVote(NULL_VOTE);
-            alert("Voto NULO confirmado!");
-            correct();
-            
-            if (accessibilityMode) {
-                speak('Voto nulo confirmado');
+            if (registerVote(NULL_VOTE)) {
+                alert("Voto NULO confirmado!");
+                correct();
+                
+                if (accessibilityMode) {
+                    speak('Voto nulo confirmado');
+                }
+            } else {
+                throw new Error("Falha ao registrar voto nulo");
             }
         } catch (error) {
             console.error("Erro ao registrar voto nulo:", error);
@@ -166,12 +183,15 @@ function voteBlank() {
     if (confirm("Deseja votar em BRANCO?")) {
         isProcessing = true;
         try {
-            registerVote(BLANK_VOTE);
-            alert("Voto em BRANCO confirmado!");
-            correct();
-            
-            if (accessibilityMode) {
-                speak('Voto em branco confirmado');
+            if (registerVote(BLANK_VOTE)) {
+                alert("Voto em BRANCO confirmado!");
+                correct();
+                
+                if (accessibilityMode) {
+                    speak('Voto em branco confirmado');
+                }
+            } else {
+                throw new Error("Falha ao registrar voto em branco");
             }
         } catch (error) {
             console.error("Erro ao registrar voto em branco:", error);
@@ -183,15 +203,21 @@ function voteBlank() {
 }
 
 function registerVote(voteType) {
-    const votes = JSON.parse(localStorage.getItem('votes'));
-    const voteData = {
-        type: voteType,
-        role: currentRole,
-        timestamp: new Date().toISOString(),
-        hash: generateVoteHash(voteType)
-    };
-    votes.push(voteData);
-    localStorage.setItem('votes', JSON.stringify(votes));
+    try {
+        const votes = JSON.parse(localStorage.getItem('votes')) || [];
+        const voteData = {
+            type: voteType,
+            role: currentRole,
+            timestamp: new Date().toISOString(),
+            hash: generateVoteHash(voteType)
+        };
+        votes.push(voteData);
+        localStorage.setItem('votes', JSON.stringify(votes));
+        return true;
+    } catch (e) {
+        console.error("Erro ao registrar voto:", e);
+        return false;
+    }
 }
 
 function generateVoteHash(voteType) {
@@ -212,40 +238,52 @@ function updateDisplay() {
 
 function checkCandidate() {
     if (currentNumber.length === 2) {
-        const candidates = JSON.parse(localStorage.getItem('candidates'));
-        currentCandidate = candidates.find(c => c.number === currentNumber && c.role === currentRole);
-        
-        if (currentCandidate) {
-            document.getElementById('candidate-name').textContent = currentCandidate.name;
-            document.getElementById('candidate-party').textContent = currentCandidate.party;
-            document.getElementById('vice-name').textContent = currentCandidate.viceName || "Não informado";
+        try {
+            const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+            currentCandidate = candidates.find(c => c.number === currentNumber && c.role === currentRole);
             
+            const nameElement = document.getElementById('candidate-name');
+            const partyElement = document.getElementById('candidate-party');
+            const viceElement = document.getElementById('vice-name');
             const photoContainer = document.querySelector('.photo-container');
-            if (currentCandidate.photo) {
-                photoContainer.innerHTML = `<img src="${currentCandidate.photo}" alt="${currentCandidate.name}" style="width:100%;height:100%;object-fit:cover;">`;
+            
+            if (currentCandidate) {
+                nameElement.textContent = currentCandidate.name || "";
+                partyElement.textContent = currentCandidate.party || "";
+                viceElement.textContent = currentCandidate.viceName || "Não informado";
+                
+                if (currentCandidate.photo) {
+                    photoContainer.innerHTML = `<img src="${currentCandidate.photo}" alt="${currentCandidate.name}" style="width:100%;height:100%;object-fit:cover;">`;
+                } else {
+                    photoContainer.innerHTML = '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
+                }
             } else {
+                nameElement.textContent = "";
+                partyElement.textContent = "";
+                viceElement.textContent = "";
                 photoContainer.innerHTML = '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
             }
-        } else {
-            document.getElementById('candidate-name').textContent = "";
-            document.getElementById('candidate-party').textContent = "";
-            document.getElementById('vice-name').textContent = "";
-            document.querySelector('.photo-container').innerHTML = '<div class="photo-placeholder"><i class="fas fa-user"></i></div>';
+        } catch (e) {
+            console.error("Erro ao verificar candidato:", e);
         }
     }
     updateMessages();
 }
 
 function updateRoleDisplay() {
-    const roleDisplay = document.getElementById('current-role-display');
-    const voteRoleDisplay = document.getElementById('vote-role-display');
-    
-    if (currentRole) {
-        roleDisplay.textContent = `- ${currentRole.toUpperCase()}`;
-        voteRoleDisplay.textContent = currentRole.toUpperCase();
-    } else {
-        roleDisplay.textContent = '';
-        voteRoleDisplay.textContent = '[NÃO SELECIONADO]';
+    try {
+        const roleDisplay = document.getElementById('current-role-display');
+        const voteRoleDisplay = document.getElementById('vote-role-display');
+        
+        if (currentRole) {
+            roleDisplay.textContent = `- ${currentRole.toUpperCase()}`;
+            voteRoleDisplay.textContent = currentRole.toUpperCase();
+        } else {
+            roleDisplay.textContent = '';
+            voteRoleDisplay.textContent = '[NÃO SELECIONADO]';
+        }
+    } catch (e) {
+        console.error("Erro ao atualizar exibição de cargo:", e);
     }
 }
 
@@ -357,67 +395,69 @@ function showCandidateForm() {
 
     document.getElementById('file-input').onchange = function(e) {
         const file = e.target.files[0];
-        if (file && file.type.match('image.*')) {
-            isProcessing = true;
-            document.getElementById('upload-btn').disabled = true;
-            
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                candidatePhotoUrl = event.target.result;
-                document.getElementById('register-preview').innerHTML = 
-                    `<img src="${candidatePhotoUrl}" alt="Foto do candidato" style="max-width:100%;max-height:100%;">`;
-                isProcessing = false;
-                document.getElementById('upload-btn').disabled = false;
-            };
-            reader.onerror = function() {
-                alert('Erro ao carregar a imagem. Por favor, tente novamente.');
-                isProcessing = false;
-                document.getElementById('upload-btn').disabled = false;
-            };
-            reader.readAsDataURL(file);
-        } else {
+        if (!file) return;
+        
+        if (!file.type.match('image.*')) {
             alert('Por favor, selecione um arquivo de imagem válido (JPEG, PNG, etc.)');
+            return;
         }
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            alert('A imagem deve ter menos de 2MB');
+            return;
+        }
+
+        showLoading(true);
+        document.getElementById('upload-btn').disabled = true;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            candidatePhotoUrl = event.target.result;
+            document.getElementById('register-preview').innerHTML = 
+                `<img src="${candidatePhotoUrl}" alt="Foto do candidato" style="max-width:100%;max-height:100%;">`;
+            document.getElementById('upload-btn').disabled = false;
+            showLoading(false);
+        };
+        reader.onerror = function() {
+            alert('Erro ao carregar a imagem. Por favor, tente novamente.');
+            document.getElementById('upload-btn').disabled = false;
+            showLoading(false);
+        };
+        reader.readAsDataURL(file);
     };
 
     // Configura o botão de salvar
-    document.getElementById('save-candidate').addEventListener('click', function() {
-        if (isProcessing) return;
-        registerCandidate();
-    });
+    document.getElementById('save-candidate').addEventListener('click', registerCandidate);
 }
 
 function registerCandidate() {
     if (isProcessing) return;
     isProcessing = true;
+    showLoading(true);
     
     try {
-        // Obter elementos
-        const roleElement = document.getElementById('candidate-role');
-        const numberElement = document.getElementById('candidate-number');
-        const nameElement = document.getElementById('candidate-name');
-        const partyElement = document.getElementById('candidate-party');
-        const viceElement = document.getElementById('vice-name');
-
-        // Obter e limpar valores
-        const role = roleElement.value.trim();
-        const number = numberElement.value.trim();
-        const name = nameElement.value.trim();
-        const party = partyElement.value.trim().toUpperCase();
-        const viceName = viceElement.value.trim();
+        const role = document.getElementById('candidate-role').value.trim();
+        const number = document.getElementById('candidate-number').value.trim();
+        const name = document.getElementById('candidate-name').value.trim();
+        const party = document.getElementById('candidate-party').value.trim().toUpperCase();
+        const viceName = document.getElementById('vice-name').value.trim();
 
         // Validações
-        if (!role) throw new Error('Por favor, informe o cargo!');
-        if (role.length < 3) throw new Error('O cargo deve ter pelo menos 3 caracteres!');
-        
-        if (!number) throw new Error('Por favor, informe o número do candidato!');
-        if (number.length !== 2 || isNaN(number)) throw new Error('O número deve conter exatamente 2 dígitos!');
-        
-        if (!name) throw new Error('Por favor, informe o nome do candidato!');
-        if (name.length < 5) throw new Error('O nome deve ter pelo menos 5 caracteres!');
-        
-        if (!party) throw new Error('Por favor, informe a sigla do partido!');
-        if (party.length < 2 || party.length > 10) throw new Error('A sigla do partido deve ter entre 2 e 10 caracteres!');
+        if (!role || role.length < 3) {
+            throw new Error('O cargo deve ter pelo menos 3 caracteres!');
+        }
+
+        if (!number || number.length !== 2 || !/^\d+$/.test(number)) {
+            throw new Error('O número deve conter exatamente 2 dígitos numéricos!');
+        }
+
+        if (!name || name.length < 5) {
+            throw new Error('O nome deve ter pelo menos 5 caracteres!');
+        }
+
+        if (!party || party.length < 2 || party.length > 10) {
+            throw new Error('A sigla do partido deve ter entre 2 e 10 caracteres!');
+        }
 
         // Verificar duplicidade
         const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
@@ -442,22 +482,26 @@ function registerCandidate() {
             createdAt: new Date().toISOString()
         };
 
-        // Salvar
+        // Atualizar lista e salvar
         candidates.push(newCandidate);
         localStorage.setItem('candidates', JSON.stringify(candidates));
 
-        // Feedback
-        alert(`Candidato cadastrado com sucesso!\n\nCargo: ${role}\nNúmero: ${number}\nNome: ${name}\nPartido: ${party}${viceName ? `\nVice: ${viceName}` : ''}`);
+        alert(`
+          Candidato cadastrado com sucesso!
+          \nCargo: ${role}
+          \nNúmero: ${number}
+          \nNome: ${name}
+          \nPartido: ${party}
+          ${viceName ? `\nVice: ${viceName}` : ''}
+        `);
         
         closeModal();
-        return true;
-
     } catch (error) {
         console.error('Erro no cadastro:', error);
         alert(error.message || 'Erro ao cadastrar candidato. Verifique os dados.');
-        return false;
     } finally {
         isProcessing = false;
+        showLoading(false);
         document.getElementById('file-input').value = '';
     }
 }
@@ -656,94 +700,107 @@ function resetUrn() {
 }
 
 function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const votes = JSON.parse(localStorage.getItem('votes'));
-    const candidates = JSON.parse(localStorage.getItem('candidates'));
-    const now = new Date();
-    
-    // Título
-    doc.setFontSize(18);
-    doc.text('Relatório da Urna Eletrônica', 105, 15, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`Gerado em: ${now.toLocaleString()}`, 105, 22, { align: 'center' });
-    
-    // Resumo de votos
-    doc.setFontSize(14);
-    doc.text('Resumo de Votos', 14, 35);
-    
-    let yPos = 45;
-    const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
-    
-    if (roles.length === 0) {
-        doc.setFontSize(12);
-        doc.text('Nenhum cargo definido na eleição', 14, yPos);
-        yPos += 10;
-    } else {
-        roles.forEach(role => {
-            const roleVotes = votes.filter(v => v.role === role);
-            const total = roleVotes.length;
-            
-            doc.setFontSize(12);
-            doc.text(`Cargo: ${role} - Total de votos: ${total}`, 14, yPos);
-            yPos += 10;
-            
-            // Contagem por candidato
-            const candidatesForRole = candidates.filter(c => c.role === role);
-            candidatesForRole.forEach(candidate => {
-                const votesForCandidate = roleVotes.filter(v => v.type === candidate.number).length;
-                doc.text(`- ${candidate.number}: ${candidate.name} (${candidate.party}): ${votesForCandidate} votos`, 20, yPos);
-                yPos += 7;
-            });
-            
-            // Votos nulos e brancos
-            const nullVotes = roleVotes.filter(v => v.type === NULL_VOTE).length;
-            const blankVotes = roleVotes.filter(v => v.type === BLANK_VOTE).length;
-            
-            doc.text(`- Votos nulos: ${nullVotes}`, 20, yPos);
-            yPos += 7;
-            doc.text(`- Votos em branco: ${blankVotes}`, 20, yPos);
-            yPos += 10;
-        });
-    }
-    
-    // Lista completa de votos (se houver espaço)
-    if (yPos < 250) {
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.text('Registro Completo de Votos', 105, 15, { align: 'center' });
+    try {
+        if (typeof jsPDF === 'undefined') {
+            alert('Biblioteca jsPDF não carregada. Não é possível gerar o relatório.');
+            return;
+        }
         
-        yPos = 25;
-        votes.forEach((vote, index) => {
-            if (yPos > 280) {
-                doc.addPage();
-                yPos = 15;
-            }
-            
-            let voteInfo;
-            if (vote.type === NULL_VOTE) {
-                voteInfo = `VOTO NULO (${vote.role || 'Sem cargo'})`;
-            } else if (vote.type === BLANK_VOTE) {
-                voteInfo = `VOTO EM BRANCO (${vote.role || 'Sem cargo'})`;
-            } else {
-                const candidate = candidates.find(c => c.number === vote.type && c.role === vote.role);
-                voteInfo = candidate 
-                    ? `Voto para ${candidate.name} (${candidate.party}) - ${vote.role}`
-                    : `Voto inválido (número ${vote.type})`;
-            }
-            
-            const voteTime = new Date(vote.timestamp).toLocaleString();
-            doc.text(`${index + 1}. ${voteTime} - ${voteInfo}`, 14, yPos);
+        showLoading(true);
+        
+        const doc = new jsPDF();
+        const votes = JSON.parse(localStorage.getItem('votes')) || [];
+        const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+        const now = new Date();
+        
+        // Título
+        doc.setFontSize(18);
+        doc.text('Relatório da Urna Eletrônica', 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(`Gerado em: ${now.toLocaleString()}`, 105, 22, { align: 'center' });
+        
+        // Resumo de votos
+        doc.setFontSize(14);
+        doc.text('Resumo de Votos', 14, 35);
+        
+        let yPos = 45;
+        const roles = JSON.parse(localStorage.getItem('electionRoles')) || [];
+        
+        if (roles.length === 0) {
+            doc.setFontSize(12);
+            doc.text('Nenhum cargo definido na eleição', 14, yPos);
             yPos += 10;
-        });
+        } else {
+            roles.forEach(role => {
+                const roleVotes = votes.filter(v => v.role === role);
+                const total = roleVotes.length;
+                
+                doc.setFontSize(12);
+                doc.text(`Cargo: ${role} - Total de votos: ${total}`, 14, yPos);
+                yPos += 10;
+                
+                // Contagem por candidato
+                const candidatesForRole = candidates.filter(c => c.role === role);
+                candidatesForRole.forEach(candidate => {
+                    const votesForCandidate = roleVotes.filter(v => v.type === candidate.number).length;
+                    doc.text(`- ${candidate.number}: ${candidate.name} (${candidate.party}): ${votesForCandidate} votos`, 20, yPos);
+                    yPos += 7;
+                });
+                
+                // Votos nulos e brancos
+                const nullVotes = roleVotes.filter(v => v.type === NULL_VOTE).length;
+                const blankVotes = roleVotes.filter(v => v.type === BLANK_VOTE).length;
+                
+                doc.text(`- Votos nulos: ${nullVotes}`, 20, yPos);
+                yPos += 7;
+                doc.text(`- Votos em branco: ${blankVotes}`, 20, yPos);
+                yPos += 10;
+            });
+        }
+        
+        // Lista completa de votos (se houver espaço)
+        if (votes.length > 0 && yPos < 250) {
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.text('Registro Completo de Votos', 105, 15, { align: 'center' });
+            
+            yPos = 25;
+            votes.forEach((vote, index) => {
+                if (yPos > 280) {
+                    doc.addPage();
+                    yPos = 15;
+                }
+                
+                let voteInfo;
+                if (vote.type === NULL_VOTE) {
+                    voteInfo = `VOTO NULO (${vote.role || 'Sem cargo'})`;
+                } else if (vote.type === BLANK_VOTE) {
+                    voteInfo = `VOTO EM BRANCO (${vote.role || 'Sem cargo'})`;
+                } else {
+                    const candidate = candidates.find(c => c.number === vote.type && c.role === vote.role);
+                    voteInfo = candidate 
+                        ? `Voto para ${candidate.name} (${candidate.party}) - ${vote.role}`
+                        : `Voto inválido (número ${vote.type})`;
+                }
+                
+                const voteTime = new Date(vote.timestamp).toLocaleString();
+                doc.text(`${index + 1}. ${voteTime} - ${voteInfo}`, 14, yPos);
+                yPos += 10;
+            });
+        }
+        
+        doc.save(`relatorio-urna-${now.toISOString().slice(0,10)}.pdf`);
+    } catch (e) {
+        console.error("Erro ao gerar PDF:", e);
+        alert("Erro ao gerar relatório. Verifique o console para detalhes.");
+    } finally {
+        showLoading(false);
     }
-    
-    doc.save(`relatorio-urna-${now.toISOString().slice(0,10)}.pdf`);
 }
 
 // Funções auxiliares
 function showModal(content) {
+    document.getElementById('modal-title').textContent = "Administração";
     document.getElementById('modal-content').innerHTML = content;
     document.getElementById('admin-modal').style.display = 'block';
     document.body.style.overflow = 'hidden';
@@ -754,6 +811,11 @@ function closeModal() {
     document.body.style.overflow = 'auto';
     document.getElementById('file-input').value = '';
     isProcessing = false;
+    showLoading(false);
+}
+
+function showLoading(show) {
+    document.getElementById('loading-spinner').style.display = show ? 'flex' : 'none';
 }
 
 function toggleAccessibility() {

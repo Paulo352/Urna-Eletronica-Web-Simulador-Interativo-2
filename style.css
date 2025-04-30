@@ -138,11 +138,18 @@ h1 {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .photo-placeholder {
     color: #777;
     font-size: 2.5rem;
+}
+
+.photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .info-container {
@@ -293,6 +300,16 @@ h1 {
     animation: fadeIn 0.3s;
 }
 
+.modal-content h2 {
+    margin-bottom: 20px;
+    color: var(--primary);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .close {
     position: absolute;
     top: 10px;
@@ -359,6 +376,57 @@ h1 {
     background-color: #c0392b;
 }
 
+/* Photo upload */
+#register-preview {
+    width: 100px;
+    height: 120px;
+    border: 2px solid #ccc;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#register-preview i {
+    font-size: 2.5rem;
+    color: #777;
+}
+
+#register-preview img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.photo-options {
+    display: flex;
+    gap: 10px;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 4px solid var(--accent);
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Acessibilidade */
 .accessibility-mode .key {
     font-size: 2rem;
@@ -422,55 +490,4 @@ h1 {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-/* Adicione ao seu style.css */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.form-control {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.btn {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.role-item {
-    display: flex;
-    margin-bottom: 10px;
-}
-
-.role-item input {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.no-roles-warning {
-    color: #666;
-    font-style: italic;
-    margin-bottom: 15px;
 }
