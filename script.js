@@ -392,69 +392,35 @@ function registerCandidate() {
     isProcessing = true;
     
     try {
-        // Obter elementos de forma segura
+        // Obter elementos
         const roleElement = document.getElementById('candidate-role');
         const numberElement = document.getElementById('candidate-number');
         const nameElement = document.getElementById('candidate-name');
         const partyElement = document.getElementById('candidate-party');
         const viceElement = document.getElementById('vice-name');
 
-        // Verificar se elementos existem
-        if (!roleElement || !numberElement || !nameElement || !partyElement || !viceElement) {
-            throw new Error('Elementos do formulário não encontrados!');
-        }
+        // Obter e limpar valores
+        const role = roleElement.value.trim();
+        const number = numberElement.value.trim();
+        const name = nameElement.value.trim();
+        const party = partyElement.value.trim().toUpperCase();
+        const viceName = viceElement.value.trim();
 
-        // Obter valores com fallback para string vazia
-        const role = roleElement.value ? roleElement.value.trim() : '';
-        const number = numberElement.value ? numberElement.value.trim() : '';
-        const name = nameElement.value ? nameElement.value.trim() : '';
-        const party = partyElement.value ? partyElement.value.trim().toUpperCase() : '';
-        const viceName = viceElement.value ? viceElement.value.trim() : '';
-
-        // Validações passo a passo
-        if (!role) {
-            throw new Error('Por favor, informe o cargo!');
-        }
-
-        if (role.length < 3) {
-            throw new Error('O cargo deve ter pelo menos 3 caracteres!');
-        }
-
-        if (!number) {
-            throw new Error('Por favor, informe o número do candidato!');
-        }
-
-        if (number.length !== 2 || isNaN(number)) {
-            throw new Error('O número deve conter exatamente 2 dígitos!');
-        }
-
-        if (!name) {
-            throw new Error('Por favor, informe o nome do candidato!');
-        }
-
-        if (name.length < 5) {
-            throw new Error('O nome deve ter pelo menos 5 caracteres!');
-        }
-
-        if (!party) {
-            throw new Error('Por favor, informe a sigla do partido!');
-        }
-
-        if (party.length < 2 || party.length > 10) {
-            throw new Error('A sigla do partido deve ter entre 2 e 10 caracteres!');
-        }
-
-        // Obter lista de candidatos existente
-        let candidates = [];
-        try {
-            const storedCandidates = localStorage.getItem('candidates');
-            candidates = storedCandidates ? JSON.parse(storedCandidates) : [];
-        } catch (e) {
-            console.error('Erro ao ler candidatos:', e);
-            candidates = [];
-        }
+        // Validações
+        if (!role) throw new Error('Por favor, informe o cargo!');
+        if (role.length < 3) throw new Error('O cargo deve ter pelo menos 3 caracteres!');
+        
+        if (!number) throw new Error('Por favor, informe o número do candidato!');
+        if (number.length !== 2 || isNaN(number)) throw new Error('O número deve conter exatamente 2 dígitos!');
+        
+        if (!name) throw new Error('Por favor, informe o nome do candidato!');
+        if (name.length < 5) throw new Error('O nome deve ter pelo menos 5 caracteres!');
+        
+        if (!party) throw new Error('Por favor, informe a sigla do partido!');
+        if (party.length < 2 || party.length > 10) throw new Error('A sigla do partido deve ter entre 2 e 10 caracteres!');
 
         // Verificar duplicidade
+        const candidates = JSON.parse(localStorage.getItem('candidates')) || [];
         const duplicate = candidates.some(c => 
             c.number === number && c.role.toLowerCase() === role.toLowerCase()
         );
@@ -476,21 +442,13 @@ function registerCandidate() {
             createdAt: new Date().toISOString()
         };
 
-        // Atualizar lista e salvar
+        // Salvar
         candidates.push(newCandidate);
         localStorage.setItem('candidates', JSON.stringify(candidates));
 
-        // Feedback de sucesso
-        alert(`
-          Candidato cadastrado com sucesso!
-          \nCargo: ${role}
-          \nNúmero: ${number}
-          \nNome: ${name}
-          \nPartido: ${party}
-          ${viceName ? `\nVice: ${viceName}` : ''}
-        `);
+        // Feedback
+        alert(`Candidato cadastrado com sucesso!\n\nCargo: ${role}\nNúmero: ${number}\nNome: ${name}\nPartido: ${party}${viceName ? `\nVice: ${viceName}` : ''}`);
         
-        // Fechar modal e resetar
         closeModal();
         return true;
 
@@ -500,9 +458,7 @@ function registerCandidate() {
         return false;
     } finally {
         isProcessing = false;
-        // Limpar upload de foto
-        const fileInput = document.getElementById('file-input');
-        if (fileInput) fileInput.value = '';
+        document.getElementById('file-input').value = '';
     }
 }
 
