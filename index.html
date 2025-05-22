@@ -4,119 +4,203 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urna Eletrônica</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <h1><i class="fas fa-vote-yea"></i> URNA ELETRÔNICA <span id="current-role-display"></span></h1>
-                <div id="clock"></div>
-            </div>
-        </header>
+    <header>
+        <div class="header-top">
+            <h1>Urna Eletrônica</h1>
+            <div id="clock" class="clock">00:00:00</div>
+        </div>
+        <div class="header-buttons">
+            <button id="adminBtn">Administrador</button>
+            <button id="accessibilityBtn">Acessibilidade</button>
+        </div>
+    </header>
 
-        <main>
-            <div class="urna">
-                <!-- Display da Urna -->
-                <div class="display">
-                    <div class="screen">
-                        <div class="vote-instruction">SEU VOTO PARA</div>
-                        <div class="vote-role" id="vote-role-display"></div>
-                        
-                        <div class="number-input">
-                            <span>Número:</span>
-                            <input type="text" id="vote-input" maxlength="2" readonly>
-                        </div>
-                        
-                        <div class="candidate-info">
-                            <div class="photo-container">
-                                <div class="photo-placeholder"><i class="fas fa-user"></i></div>
+    <main>
+        <section id="voting-screen">
+            <div class="left-side">
+                <div class="screen">
+                    <div class="candidate-number">
+                        Número do Candidato:
+                        <input type="number" id="candidateNumberInput" disabled>
+                    </div>
+                    <div class="candidate-info">
+                        <div class="candidate-photos">
+                            <div id="candidatePhoto" class="photo-container">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='%23757575'%3ESem foto%3C/text%3E%3C/svg%3E" alt="Foto do candidato">
+                                <div class="photo-label">Candidato</div>
                             </div>
-                            <div class="info-container">
-                                <div class="info-line"><span>Nome:</span> <span id="candidate-name"></span></div>
-                                <div class="info-line"><span>Partido:</span> <span id="candidate-party"></span></div>
-                                <div class="info-line"><span>Vice:</span> <span id="vice-name"></span></div>
+                            <div id="candidateVicePhoto" class="photo-container" style="display: none;">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='%23757575'%3ESem foto%3C/text%3E%3C/svg%3E" alt="Foto do vice">
+                                <div class="photo-label">Vice</div>
                             </div>
                         </div>
-                        
-                        <div class="vote-messages">
-                            <div class="message" id="message-line1"></div>
-                            <div class="message" id="message-line2"></div>
+                        <div class="candidate-details">
+                            <h3 id="candidateName">Candidato</h3>
+                            <p id="candidateParty">Partido</p>
+                            <p id="candidateVice" style="display: none;">Vice: </p>
+                            <p id="candidateNumber" class="number-display"></p>
                         </div>
                     </div>
-                    <div class="brand">JUSTIÇA ELEITORAL</div>
+                    <div class="voting-instructions">
+                        <p>Digite o número do candidato</p>
+                        <p class="small-text">Para votar, digite o número do candidato e pressione CONFIRMA</p>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Teclado da Urna -->
+            <div class="right-side">
                 <div class="keyboard">
-                    <div class="key-row">
-                        <button class="key" onclick="addNumber('1')">1</button>
-                        <button class="key" onclick="addNumber('2')">2</button>
-                        <button class="key" onclick="addNumber('3')">3</button>
+                    <div class="keyboard-container">
+                        <div class="number-pad">
+                            <button class="number-btn" data-number="1">1</button>
+                            <button class="number-btn" data-number="2">2</button>
+                            <button class="number-btn" data-number="3">3</button>
+                            <button class="number-btn" data-number="4">4</button>
+                            <button class="number-btn" data-number="5">5</button>
+                            <button class="number-btn" data-number="6">6</button>
+                            <button class="number-btn" data-number="7">7</button>
+                            <button class="number-btn" data-number="8">8</button>
+                            <button class="number-btn" data-number="9">9</button>
+                            <button class="number-btn" data-number="0">0</button>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="whiteBtn" class="white-btn">BRANCO</button>
+                            <button id="correctBtn" class="correct-btn">CORRIGE</button>
+                            <button id="confirmBtn" class="confirm-btn">CONFIRMA</button>
+                        </div>
                     </div>
-                    <div class="key-row">
-                        <button class="key" onclick="addNumber('4')">4</button>
-                        <button class="key" onclick="addNumber('5')">5</button>
-                        <button class="key" onclick="addNumber('6')">6</button>
-                    </div>
-                    <div class="key-row">
-                        <button class="key" onclick="addNumber('7')">7</button>
-                        <button class="key" onclick="addNumber('8')">8</button>
-                        <button class="key" onclick="addNumber('9')">9</button>
-                    </div>
-                    <div class="key-row">
-                        <button class="key btn-null" onclick="voteNull()">NULO</button>
-                        <button class="key" onclick="addNumber('0')">0</button>
-                        <button class="key btn-blank" onclick="voteBlank()">BRANCO</button>
-                    </div>
-                    <div class="action-row">
-                        <button class="key btn-correct" onclick="correct()">CORRIGE</button>
-                        <button class="key btn-confirm" onclick="confirmVote()">CONFIRMA</button>
+                    <div class="tse-logo">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60' viewBox='0 0 120 60'%3E%3Crect width='120' height='60' fill='%23fff'/%3E%3Ctext x='50%25' y='50%25' font-size='12' text-anchor='middle' dominant-baseline='middle' fill='%23333'%3EJustiça Eleitoral%3C/text%3E%3C/svg%3E" alt="Logo TSE">
                     </div>
                 </div>
             </div>
+        </section>
+    </main>
 
-            <!-- Painel Administrativo -->
-            <div class="admin-panel">
-                <button onclick="showAdminLogin('report')">
-                    <i class="fas fa-file-pdf"></i> Relatório
-                </button>
-                <button onclick="showAdminLogin('register')">
-                    <i class="fas fa-user-plus"></i> Cadastrar
-                </button>
-                <button onclick="showAdminLogin('roles')">
-                    <i class="fas fa-tags"></i> Cargos
-                </button>
-                <button onclick="showAdminLogin('password')">
-                    <i class="fas fa-key"></i> Senha
-                </button>
-                <button onclick="showAdminLogin('reset')">
-                    <i class="fas fa-trash-alt"></i> Zerar
-                </button>
-                <button onclick="toggleAccessibility()">
-                    <i class="fas fa-eye"></i> Acessibilidade
-                </button>
+    <footer>
+        <p>&copy; 2024 Urna Eletrônica</p>
+    </footer>
+
+    <!-- Adicionar o script do jsPDF para o relatório em PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Adicionar o conteúdo para a tela de administrador -->
+    <div id="adminScreen" class="screen" style="display: none;">
+        <div class="admin-login" id="adminLogin">
+            <h2>Login de Administrador</h2>
+            <input type="password" id="adminPassword" placeholder="Senha">
+            <button id="loginBtn">Entrar</button>
+            <p id="loginError" class="error"></p>
+        </div>
+        
+        <div class="admin-panel" id="adminPanel" style="display: none;">
+            <div class="admin-buttons">
+                <button id="registerCandidateBtn">Cadastrar Candidato</button>
+                <button id="reportBtn">Relatório</button>
+                <button id="resetBtn">Zerar Urna</button>
+                <button id="changePasswordBtn">Alterar Senha</button>
+                <button id="backToVotingBtn">Voltar para Votação</button>
             </div>
-        </main>
-    </div>
-
-    <!-- Modal de Administração -->
-    <div id="admin-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2 id="modal-title">Administração</h2>
-            <div id="modal-content"></div>
-            <div id="loading-spinner" class="loading-spinner" style="display: none;">
-                <div class="spinner"></div>
-                <p>Processando...</p>
+            
+            <!-- Formulário de cadastro de candidato -->
+            <div id="registerCandidateForm" class="admin-form" style="display: none;">
+                <h3>Cadastrar Candidato</h3>
+                <div class="form-group">
+                    <label for="candidateNumberInput">Número:</label>
+                    <input type="number" id="candidateNumberInput" required>
+                </div>
+                <div class="form-group">
+                    <label for="candidateNameInput">Nome:</label>
+                    <input type="text" id="candidateNameInput" required>
+                </div>
+                <div class="form-group">
+                    <label for="candidatePartyInput">Partido:</label>
+                    <input type="text" id="candidatePartyInput" required>
+                </div>
+                <div class="form-group">
+                    <label for="candidatePhotoInput">Foto:</label>
+                    <input type="file" id="candidatePhotoInput" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label for="candidateViceNameInput">Nome do Vice (opcional):</label>
+                    <input type="text" id="candidateViceNameInput">
+                </div>
+                <div class="form-group">
+                    <label for="candidateVicePhotoInput">Foto do Vice (opcional):</label>
+                    <input type="file" id="candidateVicePhotoInput" accept="image/*">
+                </div>
+                <div class="form-buttons">
+                    <button id="saveCandidateBtn">Salvar</button>
+                    <button id="cancelCandidateBtn">Cancelar</button>
+                </div>
+            </div>
+            
+            <!-- Formulário de alteração de senha -->
+            <div id="changePasswordForm" class="admin-form" style="display: none;">
+                <h3>Alterar Senha</h3>
+                <div class="form-group">
+                    <label for="currentPassword">Senha Atual:</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Nova Senha:</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">Confirmar Nova Senha:</label>
+                    <input type="password" id="confirmNewPassword" required>
+                </div>
+                <div class="form-buttons">
+                    <button id="savePasswordBtn">Salvar</button>
+                    <button id="cancelPasswordBtn">Cancelar</button>
+                </div>
+                <p id="passwordError" class="error"></p>
+            </div>
+            
+            <!-- Confirmação para zerar urna -->
+            <div id="resetConfirmation" class="admin-form" style="display: none;">
+                <h3>Zerar Urna</h3>
+                <p>Tem certeza que deseja zerar a urna? Esta ação irá apagar todos os candidatos e votos.</p>
+                <div class="form-buttons">
+                    <button id="confirmResetBtn">Confirmar</button>
+                    <button id="cancelResetBtn">Cancelar</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Input para upload de foto -->
-    <input type="file" id="file-input" accept="image/*" style="display:none">
+    <!-- Adicionar o conteúdo para a tela de acessibilidade -->
+    <div id="accessibilityScreen" class="screen" style="display: none;">
+        <div class="accessibility-options">
+            <h2>Modo de Acessibilidade</h2>
+            <div class="font-size-controls">
+                <button id="increaseFontBtn">Aumentar Fonte</button>
+                <button id="decreaseFontBtn">Diminuir Fonte</button>
+            </div>
+            <div class="contrast-controls">
+                <button id="highContrastBtn">Alto Contraste</button>
+            </div>
+            <div class="voice-controls">
+                <button id="voiceAssistantBtn">Assistente de Voz</button>
+            </div>
+            <button id="backFromAccessibilityBtn">Voltar para Votação</button>
+        </div>
+    </div>
+
+    <!-- Adicionar o conteúdo para a tela de confirmação -->
+    <div id="confirmationScreen" class="screen" style="display: none;">
+        <div class="confirmation-message">
+            <h2>Voto Registrado</h2>
+            <p>Seu voto foi registrado com sucesso!</p>
+            <div class="confirmation-animation">
+                <div class="checkmark"></div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
