@@ -3,7 +3,7 @@
 Projeto de uma urna eletrônica simulada para navegadores, desenvolvida com HTML, CSS e JavaScript puro. Ideal para estudos de programação web e lógica de votação digital.
 
 ## 🔐 Acesso Administrativo
-- **Senha padrão**: `admin`  
+- **Senha padrão**: `123456`  
 - **Armazenamento**: Todos os dados ficam salvos apenas no `localStorage` do navegador do usuário (não há conexão com banco de dados externo)  
 - *Para acessar o painel administrativo, digite a senha no campo de votação*
 
